@@ -80,7 +80,6 @@ public class GscSpecies : ROMObject {
         Game = game;
         Name = game.Charmap.Decode(name.Read(10));
         Id = data.u8();
-        Console.WriteLine("{0}, {1}", Id, Name);
         BaseHP = data.u8();
         BaseAttack = data.u8();
         BaseDefense = data.u8();
