@@ -129,6 +129,12 @@ public class GameBoy : IDisposable {
         return hitaddress;
     }
 
+    public void AdvanceFrames(int frames) {
+        for(int i = 0; i < frames; i++) {
+            AdvanceFrame();
+        }
+    }
+
     // Emulates while holding the specified input until the program counter hits one of the specified breakpoints.
     public unsafe int Hold(Joypad joypad, params int[] addrs) {
         fixed(int* addrPtr = addrs) { // Note: Not fixing the pointer causes an AccessValidationException.
@@ -152,9 +158,18 @@ public class GameBoy : IDisposable {
         Libgambatte.gambatte_cpuwrite(Handle, (ushort) addr, data);
     }
 
+    public void CpuWriteWord(int addr, ushort data) {
+        Libgambatte.gambatte_cpuwrite(Handle, (ushort) addr, (byte) ((data >> 8) & 0xFF));
+        Libgambatte.gambatte_cpuwrite(Handle, (ushort) (addr + 1u), (byte) ((data) & 0xFF));
+    }
+
     // Reads one byte of data from the CPU bus.
     public byte CpuRead(int addr) {
         return Libgambatte.gambatte_cpuread(Handle, (ushort) addr);
+    }
+
+    public ushort CpuReadWord(int addr) {
+        return (ushort) ((CpuRead(addr) << 8) | CpuRead(addr + 1));
     }
 
     // Returns the emulator state as a buffer.
@@ -177,6 +192,14 @@ public class GameBoy : IDisposable {
     // Helper function that reads the buffer directly from disk.
     public void LoadState(string file) {
         LoadState(File.ReadAllBytes(file));
+    }
+
+    public int GetCycleCount() {
+        return Libgambatte.gambatte_timenow(Handle);
+    }
+
+    public virtual void RandomizeRNG(Random random) {
+        throw new NotImplementedException();
     }
 
     // Sets flags to control non-critical processes for CPU-concerned emulation.
@@ -231,6 +254,20 @@ public class GameBoy : IDisposable {
     public void Show() {
         Scene s = new Scene(this, 160, 144);
         s.AddComponent(new VideoBufferComponent(0, 0, 160, 144));
+    }
+
+    public void Record(string movieName) {
+        Show();
+        RecordingComponent recorder = new RecordingComponent(movieName);
+        Scene.AddComponent(recorder);
+        recorder.RecordingNow = EmulatedSamples;
+        SetSpeedupFlags(SpeedupFlags.None);
+    }
+
+    public void Dispose() {
+        if(Scene != null) {
+            Scene.Dispose();
+        }
     }
 
     // Helper function that creates a basic scene graph with a video buffer component and a record component.

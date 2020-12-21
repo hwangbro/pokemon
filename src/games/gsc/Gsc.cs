@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-
+using System;
 // Represents parsed ROM data. The data will only be parsed once and shared across multiple instances of the same game if the ROM's checksums match.
 public class GscData {
 
