@@ -11,6 +11,8 @@
 # Output files
 bin/
 obj/
+[Mm]ovies/
+[Ss]imulation/
 
 # ROMS/DLLS
 roms/
