@@ -58,15 +58,44 @@ public class Tcg : GameBoy {
         get { return Data.Decks; }
     }
 
-    public Tcg(bool speedup = false, string rom = "roms/poketcg.gbc")
-        : this(rom, speedup ? SpeedupFlags.NoSound | SpeedupFlags.NoVideo : SpeedupFlags.None) { }
-    public Tcg(string rom, SpeedupFlags speedupFlags) : base("roms/gbc_bios.bin", rom, speedupFlags) {
+    public Tcg(bool speedup = false, string saveName = "roms/poketcg.sav", string rom = "roms/poketcg.gbc")
+        : this(rom, saveName, speedup ? SpeedupFlags.NoSound | SpeedupFlags.NoVideo : SpeedupFlags.None) { }
+    public Tcg(string rom, string saveName, SpeedupFlags speedupFlags) : base("roms/gbc_bios.bin", rom, saveName, speedupFlags) {
         if(ParsedROMs.ContainsKey(ROM.GlobalChecksum)) {
             Data = ParsedROMs[ROM.GlobalChecksum];
         } else {
             Data = new TcgData();
             LoadCards();
             LoadDecks();
+        }
+    }
+
+    public override void Inject(Joypad joypad) {
+        CpuWrite(0xFF91, (byte) joypad);
+    }
+
+    public override void InjectMenu(Joypad joypad) {
+        CpuWrite(0xFF90, (byte) joypad);
+    }
+
+    public void Press(params Joypad[] joypads) {
+        foreach(Joypad joypad in joypads) {
+            // 07:536A = input check on intro screen 1 IntroCutsceneJoypad
+            // Func_1d078.asm_1d0b8 = input check on title screen TitleScreenJoypad
+            // HandleMenuInput.check_A_or_B
+            // HandlePlayerModeMoveInput.skipMoving = interacting with ow sprites
+
+            // Step();
+
+            // need to check everywhere that reads from FF91 (hjoypressed)
+            RunUntil("IntroCutsceneJoypad",
+                            "TitleScreenJoypad",
+                            "HandleMenuInput.check_A_or_B", // a/b press on regular menu
+                            "HandlePlayerMoveModeInput.skipMoving", // overworld movement
+                            "HandleYesOrNoMenu.wait_Joypad" // a/b for yes no
+                            );
+            Inject(joypad);
+            AdvanceFrame();
         }
     }
 
@@ -99,6 +128,40 @@ public class Tcg : GameBoy {
             ByteStream cardStream = ROM.From(0xC << 16 | pointerStream.u16le());
             Decks.Add(new TcgDeck(this, i, cardStream));
         }
+    }
+
+    public TcgDuelDeck CreateDuelDeck(bool opponent = false) {
+        int addr = opponent ? SYM["wOpponentDeck"] : SYM["wPlayerDeck"];
+        List<TcgCard> cards = new List<TcgCard>();
+        for(int i = 0; i < 60; i++) {
+            cards.Add(Cards[CpuRead(addr + i)]);
+        }
+
+        List<TcgCard> hand = new List<TcgCard>();
+        List<TcgCard> prizes = new List<TcgCard>();
+        List<TcgCard> deck = new List<TcgCard>();
+
+        addr = opponent ? 0xC37E : 0xC27E;
+        for(int i = 0; i < 7; i++) {
+            hand.Add(cards[CpuRead(addr + i)]);
+        }
+
+        // cc08 is number of prizes
+        int numOfPrizes = CpuRead(0xCC08);
+        for(int i = 7; i < numOfPrizes; i++) {
+            prizes.Add(cards[CpuRead(addr + i)]);
+        }
+
+        for(int i = 7 + numOfPrizes; i < 60; i++) {
+            deck.Add(cards[CpuRead(addr + i)]);
+        }
+
+        return new TcgDuelDeck() {
+            Cards = cards,
+            Hand = hand,
+            Prizes = prizes,
+            Deck = deck
+        };
     }
 
     // ugly 1 to 1 asm code until I refine this
