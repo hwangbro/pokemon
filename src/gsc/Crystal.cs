@@ -4,7 +4,7 @@ using System.Collections.Generic;
 public class Crystal : Gsc {
 
     public Crystal(bool speedup = false, string rom = "roms/pokecrystal.gbc")
-        : base(rom, speedup ? SpeedupFlags.All : SpeedupFlags.None) { }
+        : base(rom, speedup ? SpeedupFlags.NoSound | SpeedupFlags.NoVideo : SpeedupFlags.None) { }
 
     // public override void Inject(Joypad joypad) {
     //     CpuWrite(0xFFA7, (byte) joypad);
@@ -16,16 +16,22 @@ public class Crystal : Gsc {
     // }
 
     public void ClearBattleText(byte lastSlot = 1) {
-        while(Hold(Joypad.A | Joypad.B, "GetJoypad", "BattleMenu", "InitPartyMenuWithCancel", "DisableLCD") == SYM["GetJoypad"]) {
+        int ret;
+        while((ret = Hold(Joypad.A | Joypad.B, "GetJoypad", "BattleMenu", "InitPartyMenuWithCancel", "DisableLCD")) == SYM["GetJoypad"]) {
             InjectMenu(Joypad.A | Joypad.B);
             AdvanceFrame(Joypad.A | Joypad.B);
             AdvanceFrame(Joypad.A);
+        }
+
+        if(ret == SYM["InitPartyMenuWithCancel"]) {
+            return;
         }
 
         while(CpuRead("wMenuCursorY") != lastSlot) {
             RunUntil("GetJoypad");
             AdvanceFrame();
         }
+
         RunUntil("GetJoypad");
         AdvanceFrame();
     }
@@ -84,6 +90,25 @@ public class Crystal : Gsc {
         }
     }
 
+    public void Swap(int targetPokeIndex, bool dead = false) {
+        int curSlot = Math.Max(CpuRead("wPartyMenuCursor"), (byte) 1);
+        Joypad joypad = targetPokeIndex > curSlot ? Joypad.Down : Joypad.Up;
+        int numScrolls = Math.Abs(curSlot - targetPokeIndex);
+        // Console.WriteLine("curSlot: {0}, targetSlot: {1}, numScrolls: {2}", curSlot, targetPokeIndex, numScrolls);
+
+        if(!dead) {
+            OpenPkmnMenu();
+            Hold(joypad, "InitPartyMenuWithCancel");
+        }
+
+        RunUntil("GetJoypad");
+
+        for(int i = 0; i < numScrolls; i++) {
+            ScrollBagSlot(joypad);
+        }
+        Press(Joypad.A, Joypad.None, Joypad.A);
+    }
+
     public void ScrollToItem(int slot) {
         int curBagPos = Math.Max(CpuRead("wItemsPocketCursor"), (byte) 1);
         int curScreenScroll = CpuRead("wItemsPocketScrollPosition");
@@ -130,6 +155,12 @@ public class Crystal : Gsc {
     public void OpenItemBag() {
         if(CpuRead("wMenuCursorY") == 1) Press(Joypad.Down);
         if(CpuRead("wMenuCursorX") == 2) Press(Joypad.Left);
+        Press(Joypad.A);
+    }
+
+    public void OpenPkmnMenu() {
+        if(CpuRead("wMenuCursorY") == 2) Press(Joypad.Up);
+        if(CpuRead("wMenuCursorX") == 1) Press(Joypad.Right);
         Press(Joypad.A);
     }
 

@@ -73,38 +73,50 @@ public abstract class GscFightSimulation<Gb, Result> where Gb : GameBoy
         MultiThread.For(numSimulations, gbs, (gb, iterator) => {
             Dictionary<string, object> memory;
             int start;
+            uint curSim;
             lock(frameLock) {
                 gb.LoadState(state);
                 gb.RandomizeRNG(random);
+                byte[] rng = new byte[3] {gb.CpuRead(0xFF04), gb.CpuRead(0xFFE1), gb.CpuRead(0xFFE2)};
+                gb.RunUntil("PlayCry");
+                gb.RunUntil("GetJoypad");
                 memory = new Dictionary<string, object>();
                 start = gb.GetCycleCount();
                 SimulationStart(gb, memory);
-                Console.WriteLine(numSims++ + " " + System.Threading.Thread.CurrentThread.ManagedThreadId);
+                curSim = numSims++;
+                Console.WriteLine("{0}, {1:X2} {2:X2} {3:X2}", curSim, rng[0], rng[1], rng[2]);
             }
 
             actionCallback(gb, memory);
-
-            do {
+            while(!HasSimulationEnded(gb, memory)) {
                 if(!actionCallback(gb, memory)) {
                     int addr = gb.SYM["wBattleMonHP"];
-                    gb.CpuWrite(addr, 0);
-                    gb.CpuWrite(addr+1, 0);
+                    gb.CpuWriteWord(addr, 0);
                     break;
                 }
-            } while(!HasSimulationEnded(gb, memory));
+            }
+
+            // do {
+            //     if(!actionCallback(gb, memory)) {
+            //         int addr = gb.SYM["wBattleMonHP"];
+            //         gb.CpuWrite(addr, 0);
+            //         gb.CpuWrite(addr+1, 0);
+            //         break;
+            //     }
+            // } while(!HasSimulationEnded(gb, memory));
 
             lock(writeLock) {
+                Console.WriteLine("{0}, fin", curSim);
                 Result result = new Result() {
                     Cycles = (ulong) (gb.GetCycleCount() - start),
                 };
                 SimulationEnd(gb, memory, ref result);
                 Results.Add(result);
             }
-
-            if(write) {
-                File.WriteAllText(name + ".json", JsonConvert.SerializeObject(Results));
-            }
         });
+        if(write) {
+            File.WriteAllText(name + ".json", JsonConvert.SerializeObject(Results));
+        }
     }
 
     public abstract void TransformInitialState(Gb gb, ref byte[] state);

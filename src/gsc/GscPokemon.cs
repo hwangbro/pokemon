@@ -20,6 +20,13 @@ public class GscPokemon {
     public GscType Type1;
     public GscType Type2;
     public bool Enemy;
+    public string Name {
+        get { return Species.Name; }
+    }
+
+    public bool FullHP {
+        get { return HP == MaxHP; }
+    }
 
     public bool Asleep {
         get { return SleepCounter != 0; }
