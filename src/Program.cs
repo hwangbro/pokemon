@@ -4,36 +4,36 @@ using System.Collections.Generic;
 
 class Program {
     static void Main(string[] args) {
-        Red gb = new Red(true);
-        // gb.Record("test");
-        gb.LoadState("basesaves/red/char/CharMoonip.gqs");
-        RbyIntroSequence intro = new RbyIntroSequence(RbyStrat.NoPal, RbyStrat.GfSkip, RbyStrat.Hop0, RbyStrat.TitleSkip, RbyStrat.Continue, RbyStrat.Continue);
-        List<RbyTile> itemTiles = new List<RbyTile> {
-            gb.Maps["MtMoon1F"][34, 31],
-            gb.Maps["MtMoon1F"][35, 23],
-            gb.Maps["MtMoonB2F"][28, 5],
-        };
-        string path1 = "UUUUUUUUUUUUURRRRRRUUUUUUURRRRDRDDDDDDDDDDDDDDDDRRRRRRURRR";
-        string path2 = "UUUUUUUUR";
-        string path3 = "UUUUUUUUUUULUUUUUUUUULLLLLLLLLLDDDDLLLLLLLDDDD";
-        string path4 = "DDLLLLLLLLRRRUUULUR";
-        string path5 = "DDDDLLLRARRARRARRRUUDDDDDDLLLLLLULLLLUUUUUUUUUUUALL";
-
-        RbyIGTChecker.CheckIGT(gb, intro, "", itemTiles, path1, path2, path3, path4, path5);
-        gb.Dispose();
-    }
-
-    public static void CrystalTest() {
-        Crystal gb = new Crystal(false);
-        gb.LoadState("basesaves/crystal/karen_xacc.gqs");
+        Tcg gb = new Tcg(true, "basesaves/tcg/Jennifer.sav");
         gb.Record("test");
-        gb.RunUntil("PlayCry");
-        gb.RunUntil("GetJoypad");
-        GscBag bag = gb.Bag;
-        if(gb.CpuRead("wMenuCursorX") != 0x1) gb.MenuPress(Joypad.Left);
-        gb.SelectMenuItem(2);
-        gb.SwitchPocket(3);
-        gb.AdvanceFrames(100);
+
+        byte[] intro = gb.SaveState();
+
+        for(int i = 0; i < 1; i++) {
+            gb.LoadState(intro);
+            gb.RunUntil("IntroCutsceneJoypad");
+            gb.AdvanceFrames(i); // delay
+            gb.Press(Joypad.A);
+            gb.Press(Joypad.A);
+            gb.Press(Joypad.A, Joypad.A);
+
+            gb.ClearText();
+            gb.SayYes();
+            gb.ClearText();
+
+
+            // TcgDuelDeck myDeck = gb.CreateDuelDeck();
+            // TcgDuelDeck oppDeck = gb.CreateDuelDeck(true);
+
+            // foreach(TcgCard card in myDeck.Hand) {
+            //     Console.WriteLine(card.Name);
+            // }
+
+            // Console.WriteLine("{0} Basics in hand\n", myDeck.BasicsInHand);
+            // gb.Press(Joypad.A);
+            gb.AdvanceFrames(100);
+        }
+
         gb.Dispose();
     }
 

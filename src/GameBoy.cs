@@ -167,6 +167,7 @@ public partial class GameBoy : IDisposable {
         for(int i = 0; i < amount; i++) AdvanceFrame(joypad);
     }
 
+
     // Emulates while holding the specified input until the program counter hits one of the specified breakpoints.
     public unsafe int Hold(Joypad joypad, params int[] addrs) {
         fixed(int* addrPtr = addrs) { // Note: Not fixing the pointer causes an AccessValidationException.
@@ -248,6 +249,20 @@ public partial class GameBoy : IDisposable {
         Scene s = new Scene(this, 160, 144);
         s.AddComponent(new VideoBufferComponent(0, 0, 160, 144));
         SetSpeedupFlags(SpeedupFlags.NoSound);
+    }
+
+    public void Record(string movieName) {
+        Show();
+        RecordingComponent recorder = new RecordingComponent(movieName);
+        Scene.AddComponent(recorder);
+        recorder.RecordingNow = EmulatedSamples;
+        SetSpeedupFlags(SpeedupFlags.None);
+    }
+
+    public void Dispose() {
+        if(Scene != null) {
+            Scene.Dispose();
+        }
     }
 
     // Helper function that creates a basic scene graph with a video buffer component and a record component.
