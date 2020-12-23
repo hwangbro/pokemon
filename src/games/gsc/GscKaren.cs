@@ -92,8 +92,13 @@ public class GscKaren : GscFightSimulation<Crystal, KarenResult> {
             gb.UseMove(1);
         } else if(enemyMon.Species.Name == "VILEPLUME") {
             gb.UseMove(4);
-        } else {
-            gb.UseMove(2);
+        } else if(enemyMon.Species.Name == "MURKROW") {
+            if(battleMon.HP < 12) {
+                gb.UseItem("FULL RESTORE", 1);
+                lastSlot = 2;
+            } else {
+                gb.UseMove(2);
+            }
         }
 
         gb.ClearBattleText(lastSlot);
