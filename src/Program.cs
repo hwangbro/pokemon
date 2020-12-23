@@ -25,19 +25,6 @@ class Program {
         // gb.Swap(1, true);
         // gb.ClearBattleText();
 
-        // gb.OpenPkmnMenu();
-        // gb.RunUntil("InitPartyMenuWithCancel");
-        // gb.Hold(Joypad.Down, "GetJoypad");
-        // // gb.Press(Joypad.Down);
-        // gb.InjectMenu(Joypad.Down);
-        // gb.AdvanceFrame();
-
-        // gb.RunUntil("GetJoypad");
-        // gb.Press(Joypad.A);
-
-        // gb.AdvanceFrames(100);
-
-
         // gb.UseItem("X SPECIAL");
         // gb.ClearBattleText(2);
 
@@ -51,12 +38,12 @@ class Program {
     }
 
     public static void runSimulation() {
-        const int gbCount = 16;
+        const int gbCount = 1;
         Crystal[] gbs = new Crystal[gbCount];
         for(int i = 0; i < gbCount; i++) {
             gbs[i] = new Crystal(true);
         }
-        // gbs[0].Record("test");
+        gbs[0].Record("test");
         int numSims = 10000;
 
         GscKaren a;
@@ -71,6 +58,6 @@ class Program {
             a.Simulate($"Simulation/crystal/karen/xacc_{i}", gbs, numSims, "basesaves/crystal/karen_xacc.gqs", a.xacc);
         }
 
-        // gbs[0].Dispose();
+        gbs[0].Dispose();
     }
 }
