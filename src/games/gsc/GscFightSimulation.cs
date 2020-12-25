@@ -96,15 +96,6 @@ public abstract class GscFightSimulation<Gb, Result> where Gb : GameBoy
                 }
             }
 
-            // do {
-            //     if(!actionCallback(gb, memory)) {
-            //         int addr = gb.SYM["wBattleMonHP"];
-            //         gb.CpuWrite(addr, 0);
-            //         gb.CpuWrite(addr+1, 0);
-            //         break;
-            //     }
-            // } while(!HasSimulationEnded(gb, memory));
-
             lock(writeLock) {
                 Console.WriteLine("{0}, fin", curSim);
                 Result result = new Result() {

@@ -49,7 +49,7 @@ public class GscKaren : GscFightSimulation<Crystal, KarenResult> {
             gb.UseMove(1);
         }
 
-        gb.ClearBattleText(lastSlot);
+        gb.ClearText(lastSlot);
 
         return true;
     }
@@ -101,7 +101,7 @@ public class GscKaren : GscFightSimulation<Crystal, KarenResult> {
             }
         }
 
-        gb.ClearBattleText(lastSlot);
+        gb.ClearText(lastSlot);
         // if(gb.GetBattleMon(false).HP == 0) {
         //     Console.WriteLine("asdfasdf");
         //     return false;
@@ -130,10 +130,10 @@ public class GscKaren : GscFightSimulation<Crystal, KarenResult> {
         if(battleMon.Name == "SPEAROW") {
             memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
             gb.UseMove(2);
-            gb.ClearBattleText();
+            gb.ClearText();
             if(gb.GetBattleMon(false).HP == 0) {
                 gb.Swap(1, true);
-                gb.ClearBattleText();
+                gb.ClearText();
             }
         } else if(enemyMon.Name == "UMBREON") {
             memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
@@ -142,11 +142,10 @@ public class GscKaren : GscFightSimulation<Crystal, KarenResult> {
             } else if(battleMon.SAtkStage == 7 && battleMon.AccStage != 7) {
                 memory["kenyaSwap"] = true;
                 gb.Swap(2);
-                gb.ClearBattleText();
+                gb.ClearText();
                 if(gb.GetBattleMon(false).HP == 0) {
                     memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
                     gb.Swap(1, true);
-                    gb.ClearBattleText();
                 }
             } else if(battleMon.HP < 18) {
                 if(battleMon.SAtkStage == 9 && battleMon.AccStage == 7) {
@@ -210,6 +209,7 @@ public class GscKaren : GscFightSimulation<Crystal, KarenResult> {
                 gb.UseMove(1);
             }
         } else if(enemyMon.Name == "MURKROW") {
+            // if(enemyMon.HP == 0) return true;
             if(battleMon.HP < 12) {
                 gb.UseItem("FULL RESTORE", 1);
                 lastSlot = 2;
@@ -219,7 +219,7 @@ public class GscKaren : GscFightSimulation<Crystal, KarenResult> {
             }
         }
 
-        gb.ClearBattleText(lastSlot);
+        gb.ClearText(lastSlot);
 
         return true;
     }
@@ -233,7 +233,7 @@ public class GscKaren : GscFightSimulation<Crystal, KarenResult> {
     }
 
     public override bool HasSimulationEnded(Crystal gb, Dictionary<string, object> memory) {
-        return gb.GetBattleMon(false).HP == 0 || gb.CpuRead("wSpriteUpdatesEnabled") == 1;
+        return gb.GetBattleMon(false).HP == 0 || gb.CpuRead("wSpriteUpdatesEnabled") == 1 || gb.CpuRead("wBattleEnded") == 1;
     }
 
     public override void SimulationStart(Crystal gb, Dictionary<string, object> memory) {
