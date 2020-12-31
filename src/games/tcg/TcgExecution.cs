@@ -49,7 +49,7 @@ public partial class Tcg {
     }
 
     public void ScrollYesNoMenu(Joypad joypad) {
-        RunUntil("HandleYesOrNoMenu.wait_DPadJoypad");
+        RunUntil("HandleYesOrNoMenu.wait_DPadJoypad"); // handleyesornomenu + 0x21
         CpuWrite("hDPadHeld", (byte) joypad);
         AdvanceFrame();
     }
@@ -82,8 +82,8 @@ public partial class Tcg {
         while(ret == SYM["WaitForButtonAorB.Joypad"] || ret == SYM["WaitForWideTextBoxInput.Joypad"]) {
             Inject(Joypad.A | Joypad.B);
             AdvanceFrame();
-            ret = RunUntil("WaitForButtonAorB.Joypad",
-                                   "WaitForWideTextBoxInput.Joypad",
+            ret = RunUntil("WaitForButtonAorB.Joypad", // waitforbuttonaorb + 0x06
+                                   "WaitForWideTextBoxInput.Joypad", // 2abe = orig + 10
                                    "HandleYesOrNoMenu.wait_Joypad",
                                    "HandlePlayerMoveModeInput.skipMoving",
                                    "StartDuel",
