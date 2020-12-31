@@ -251,20 +251,6 @@ public partial class GameBoy : IDisposable {
         SetSpeedupFlags(SpeedupFlags.NoSound);
     }
 
-    public void Record(string movieName) {
-        Show();
-        RecordingComponent recorder = new RecordingComponent(movieName);
-        Scene.AddComponent(recorder);
-        recorder.RecordingNow = EmulatedSamples;
-        SetSpeedupFlags(SpeedupFlags.None);
-    }
-
-    public void Dispose() {
-        if(Scene != null) {
-            Scene.Dispose();
-        }
-    }
-
     // Helper function that creates a basic scene graph with a video buffer component and a record component.
     public void Record(string movie) {
         Show();
