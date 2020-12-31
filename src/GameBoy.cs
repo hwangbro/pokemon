@@ -82,9 +82,14 @@ public partial class GameBoy : IDisposable {
         get { return Libgambatte.gambatte_getdivstate(Handle); }
     }
 
-    public GameBoy(string biosFile, string romFile, SpeedupFlags speedupFlags = SpeedupFlags.None) {
+    public GameBoy(string biosFile, string romFile, string saveName, SpeedupFlags speedupFlags = SpeedupFlags.None) {
         ROM = new ROM(romFile);
         Debug.Assert(ROM.HeaderChecksumMatches(), "Cartridge header checksum mismatch!");
+
+        string saveDest = romFile.Replace(".gbc", ".sav");
+        if (saveName != saveDest) {
+            System.IO.File.Copy(saveName, saveDest, true);
+        }
 
         Handle = Libgambatte.gambatte_create();
         Debug.Assert(Libgambatte.gambatte_loadbios(Handle, biosFile, 0x900, 0x31672598) == 0, "Unable to load BIOS!");

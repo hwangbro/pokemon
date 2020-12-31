@@ -69,7 +69,7 @@ public partial class Gsc : GameBoy {
         get { return Data.Maps; }
     }
 
-    public Gsc(string rom, SpeedupFlags flags = SpeedupFlags.None) : base("roms/gbc_bios.bin", rom, flags) {
+    public Gsc(string rom, string saveName, SpeedupFlags flags = SpeedupFlags.None) : base("roms/gbc_bios.bin", rom, saveName, flags) {
         // If a ROM with the same checksum has already been parsed, the data will be shared.
         if(ParsedROMs.ContainsKey(ROM.GlobalChecksum)) {
             Data = ParsedROMs[ROM.GlobalChecksum];
