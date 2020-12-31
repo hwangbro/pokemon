@@ -69,6 +69,12 @@ public partial class Rby {
         return ret;
     }
 
+    public void ExecuteIntroSequence(RbyIntroSequence sequence) {
+        foreach(var strat in sequence) {
+            strat.Execute(this);
+        }
+    }
+
     public void PickupItem() {
         Inject(Joypad.A);
         Hold(Joypad.A, SYM["PlaySound"]);

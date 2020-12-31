@@ -52,6 +52,7 @@ public partial class Rby : GameBoy {
 
     // Maps ROM checksums to their parsed data.
     private static Dictionary<int, RbyData> ParsedROMs = new Dictionary<int, RbyData>();
+    public Dictionary<string, RbyIntroStrat> IntroStrats = new Dictionary<string, RbyIntroStrat>();
 
     public RbyData Data;
 
@@ -91,7 +92,7 @@ public partial class Rby : GameBoy {
         get { return Data.Maps; }
     }
 
-    public Rby(string rom, SpeedupFlags speedupFlags = SpeedupFlags.None) : base("roms/gbc_bios.bin", rom, speedupFlags) {
+    public Rby(string rom, string saveName, SpeedupFlags speedupFlags = SpeedupFlags.None) : base("roms/gbc_bios.bin", rom, saveName, speedupFlags) {
         // If a ROM with the same checksum has already been parsed, the data will be shared.
         if(ParsedROMs.ContainsKey(ROM.GlobalChecksum)) {
             Data = ParsedROMs[ROM.GlobalChecksum];
