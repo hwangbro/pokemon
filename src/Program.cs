@@ -4,34 +4,38 @@ using System.Collections.Generic;
 
 class Program {
     static void Main(string[] args) {
-        Tcg gb = new Tcg(true, "basesaves/tcg/Jennifer.sav");
+        TcgTest();
+    }
+
+    // to do
+    // create a savestate with starting deck for each trainer
+    // create a method for TcgDuel that returns a heuristic of how good the duel is
+    //   should be unique for each trainer
+    //   based on basics in hand, some trainer cards, enemy basics in hand, etc
+    // look for clusters of good fights
+    public static void TcgTest() {
+        Tcg gb = new Tcg(false, "basesaves/tcg/Jennifer.sav");
         gb.Record("test");
-
-        byte[] intro = gb.SaveState();
-
+        byte[] state = gb.SaveState();
         for(int i = 0; i < 1; i++) {
-            gb.LoadState(intro);
-            gb.RunUntil("IntroCutsceneJoypad");
-            gb.AdvanceFrames(i); // delay
-            gb.Press(Joypad.A);
-            gb.Press(Joypad.A);
-            gb.Press(Joypad.A, Joypad.A);
+            gb.LoadState(state);
+            gb.ClearIntro();
 
+            // talk to npc
+            gb.Press(Joypad.A);
+
+            // clear text until yes no
             gb.ClearText();
+
+            // yes no
             gb.SayYes();
-            gb.ClearText();
 
-
-            // TcgDuelDeck myDeck = gb.CreateDuelDeck();
-            // TcgDuelDeck oppDeck = gb.CreateDuelDeck(true);
-
-            // foreach(TcgCard card in myDeck.Hand) {
-            //     Console.WriteLine(card.Name);
-            // }
-
-            // Console.WriteLine("{0} Basics in hand\n", myDeck.BasicsInHand);
-            // gb.Press(Joypad.A);
-            gb.AdvanceFrames(100);
+            // clear text box
+            gb.RunUntil("WaitForButtonAorB");
+            // add delay frames here
+            gb.Press(Joypad.A);
+            gb.RunUntil("WaitForButtonAorB");
+            Console.WriteLine("{0:X2}{1:X2}, {2:X2}", gb.CpuRead("wRNG1"), gb.CpuRead("wRNG2"), gb.CpuRead("wRNGCounter"));
         }
 
         gb.Dispose();

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+
 public partial class Tcg {
 
     // ReadJoypad, at various points, reads data from joypad and stores
@@ -14,13 +17,19 @@ public partial class Tcg {
         CpuWrite("hKeysPressed", (byte) joypad);
     }
 
-    public void InjectMenu(Joypad joypad) {
+    public void InjectKeysHeld(Joypad joypad) {
         //00:0510
         // = ReadJoypad + 0x32
         // savebuttonsheld = 00:0522
         // stored in hkeysheld = 00:0523
         // 00:5227 = savebuttonsheld + 0x04
         CpuWrite("hKeysHeld", (byte) joypad);
+    }
+
+    public void InjectDPadRepeat(Joypad joypad) {
+        Inject(joypad);
+        InjectKeysHeld(joypad);
+        CpuWrite("hDPadHeld", (byte) joypad);
     }
 
     public override void Press(params Joypad[] joypads) {
@@ -30,13 +39,11 @@ public partial class Tcg {
             // HandleMenuInput.check_A_or_B
             // HandlePlayerModeMoveInput.skipMoving = interacting with ow sprites
 
-            // Step();
-
             // need to check everywhere that reads from FF91 (hjoypressed)
 
             int[] addrs = {
                 // 0x01D36A, // introcutscenejoypad, 07:536a
-                // 0x01D0b8, // titlescreenjoypad
+                // 0x01D0b8, // titlescreenjoypad 07:50b8
                 // SYM["HandleMenuInput.check_A_or_B"], // a/b press on regular menu
                 SYM["SaveButtonsHeld"] + 0x05, // overworld movement
                 // SYM["HandleYesOrNoMenu"] + 0x1b, //a/b for yes/no
@@ -49,19 +56,21 @@ public partial class Tcg {
     }
 
     public void ScrollYesNoMenu(Joypad joypad) {
-        RunUntil("HandleYesOrNoMenu.wait_DPadJoypad"); // handleyesornomenu + 0x21
-        CpuWrite("hDPadHeld", (byte) joypad);
+        RunUntil("HandleDPadRepeat");
+        InjectDPadRepeat(joypad);
         AdvanceFrame();
     }
 
     public void SayYes() {
-        ScrollYesNoMenu(Joypad.Left);
+        AdvanceFrame();
+        if(CpuRead("wCurMenuItem") != 0) ScrollYesNoMenu(Joypad.Left);
         Press(Joypad.A);
         AdvanceFrame();
     }
 
     public void SayNo() {
-        ScrollYesNoMenu(Joypad.Right);
+        AdvanceFrame();
+        if(CpuRead("wCurMenuItem") != 1) ScrollYesNoMenu(Joypad.Right);
         Press(Joypad.A);
         AdvanceFrame();
     }
@@ -73,21 +82,48 @@ public partial class Tcg {
                 Hold(Joypad.B, "ReadJoypad"); // requires B to be held every frame to run
             } while(CpuRead(SYM["wPlayerCurrentlyMoving"]) != 0);
             RunUntil(SYM["SaveButtonsHeld"] + 0x05);
-            InjectMenu(joypad);
+            InjectKeysHeld(joypad);
         }
     }
 
-    public void ClearText(params Joypad[] joypads) {
-        int ret = RunUntil("WaitForButtonAorB.Joypad", "WaitForWideTextBoxInput.Joypad");
-        while(ret == SYM["WaitForButtonAorB.Joypad"] || ret == SYM["WaitForWideTextBoxInput.Joypad"]) {
-            Inject(Joypad.A | Joypad.B);
-            AdvanceFrame();
-            ret = RunUntil("WaitForButtonAorB.Joypad", // waitforbuttonaorb + 0x06
-                                   "WaitForWideTextBoxInput.Joypad", // 2abe = orig + 10
-                                   "HandleYesOrNoMenu.wait_Joypad",
-                                   "HandlePlayerMoveModeInput.skipMoving",
-                                   "StartDuel",
-                                   "CardListFunction"); //wGameEvent
+    public void ClearText() {
+        // wSkipDelayAllowed to check for b clears
+        // OW text clears are fine, duel text clears need cleaning up
+        // CardListFunction wGameEvent
+        // int[] addr = {
+        //     SYM["WaitForPlayerToAdvanceText"], // actual clear condition, should clear text
+        //     SYM["HandleYesOrNoMenu"], // yes no menu needs to be handled separately
+        //     SYM["HandlePlayerMoveModeInput"], // OW loop, should exit
+        // };
+        string[] addr = {
+            "WaitForButtonAorB", // clear OW textbox breakpoint
+            "HandleYesOrNoMenu", // yes/no breaks and are handled separately
+            "HandlePlayerMoveModeInput", // OW loop should break
+            "CheckSkipDelayAllowed", // in duel skippable with B
+            "WaitForWideTextBoxInput.wait_A_or_B_loop", //
+            "DisplayCardList.wait_button" // in hand/display
+        };
+
+        while(true) {
+            int ret = RunUntil(addr);
+            if (ret == SYM["WaitForButtonAorB"] || ret == SYM["WaitForWideTextBoxInput.wait_A_or_B_loop"]) {
+                Press(Joypad.A);
+            } else if(ret == SYM["CheckSkipDelayAllowed"]) {
+                InjectKeysHeld(Joypad.B);
+                AdvanceFrame();
+            } else {
+                break;
+            }
         }
+    }
+
+    public void ClearIntro() {
+        RunUntil("Start");
+        Press(Joypad.A, Joypad.A);
+        RunUntil("Func_1d078.asm_1d0b8"); // title screen joypad
+        Press(Joypad.A);
+        RunUntil("HandleMenuInput.check_A_or_B");
+        Press(Joypad.A);
+        RunUntil("HandlePlayerMoveModeInput");
     }
 }

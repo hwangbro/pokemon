@@ -11,11 +11,11 @@ public class TcgData {
 
     public TcgData() {
         Charmap = new TcgCharmap("! \" _ ♂ ♀ & ' ( ) _ _ , - . _ " +
-                            "0 1 2 3 4 5 6 7 8 9 : ; < = > ? " +
-                            "@ A B C D E F G H I J K L M N O " +
-                            "P Q R S T U V W X Y Z [ \\ ] ^ _ " +
-                            "é a b c d e f g h i j k l m n o " +
-                            "p q r s t u v w x y z { | } ");
+                                "0 1 2 3 4 5 6 7 8 9 : ; < = > ? " +
+                                "@ A B C D E F G H I J K L M N O " +
+                                "P Q R S T U V W X Y Z [ \\ ] ^ _ " +
+                                "é a b c d e f g h i j k l m n o " +
+                                "p q r s t u v w x y z { | } ");
 
         Cards = new DataList<TcgCard>();
         PkmnCards = new DataList<TcgPkmnCard>();
@@ -73,7 +73,7 @@ public partial class Tcg : GameBoy {
     private void LoadCards() {
         const int numCards = 228;
         ByteStream pointerStream = ROM.From("CardPointers");
-        pointerStream.Seek(2); // unused pointer
+        pointerStream.Seek(2); // unused
 
         for(int i = 0; i < numCards; i++) {
             ByteStream cardStream = ROM.From(0xC << 16 | pointerStream.u16le());
@@ -101,7 +101,8 @@ public partial class Tcg : GameBoy {
         }
     }
 
-    // ugly 1 to 1 asm code until I refine this
+    // ugly 1-to-1 asm code until I refine this
+    // returns the target string given the text id
     public string GetTextFromId(ushort id) {
         ushort hl = id;
         ushort de = hl;
@@ -128,7 +129,6 @@ public partial class Tcg : GameBoy {
         // rla
         a.RotateLeft(ref c);
 
-
         // rl h
         hl2 = ((ushort)(hl & 0xFF00)).RotateLeft(ref c);
         hl = (ushort) (hl2 | (hl & 0x00FF));
@@ -144,9 +144,6 @@ public partial class Tcg : GameBoy {
         hl = de;
         int namePointer = (bank << 16 |  hl) + 1;
 
-        string name = Charmap.Decode(ROM.From(namePointer).Until(TcgCharmap.Terminator));
-        // Charmap.Decode(Rom.ReadUntil(TcgCharmap.Terminator, ref namePointer));
-
-        return name;
+        return Charmap.Decode(ROM.From(namePointer).Until(TcgCharmap.Terminator));;
     }
 }
