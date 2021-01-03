@@ -1,12 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 
-public class TcgDuel {
-
-    public TcgDuelDeck MyDeck;
-    public TcgDuelDeck OppDeck;
-}
-
 public class TcgDuelDeck {
 
     // C27E my deck order
@@ -22,10 +16,11 @@ public class TcgDuelDeck {
     public List<TcgCard> Hand;
     public List<TcgCard> Prizes;
     public List<TcgCard> Deck;
-    public List<TcgCard> Discard;
-
-    public int BasicsInHand {
-        get { return Hand.Where(card => card is TcgPkmnCard && ((((TcgPkmnCard) card)).Stage == TcgStage.Basic)).Count(); }
+    // public List<TcgCard> Discard;
+    public TcgCard Active;
+    public List<TcgCard> Bench;
+    public List<TcgCard> BasicsInHand {
+        get { return Hand.Where(card => card.IsBasic).ToList<TcgCard>(); }
     }
 
     public void Draw() {
@@ -35,4 +30,19 @@ public class TcgDuelDeck {
         Deck.RemoveAt(0);
         Hand.Add(card);
     }
+
+    // public (TcgType, byte) PotentialDamage() {
+    //     TcgType type;
+    //     byte dmg;
+
+    //     return (type, dmg);
+    // }
+
+    // public List<TcgCard> CanDoDamage() {
+    //     foreach(var card in Hand) {
+    //         if(card is TcgPkmnCard) {
+    //             foreach(TcgMove move in (TcgPkmnCard)(card).Moves)
+    //         }
+    //     }
+    // }
 }

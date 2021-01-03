@@ -1,19 +1,6 @@
 using System;
 using System.Collections.Generic;
 
-// mask used, bytes are switched because little endian
-public enum TcgEnergy : byte {
-
-    Grass,
-    Fire,
-    Water,
-    Lightning,
-    Psyhic,
-    Fighting,
-    Unused,
-    Colorless,
-}
-
 public enum TcgCategory : byte {
 
     Normal,
@@ -59,7 +46,7 @@ public enum TcgFlag3 : byte {
 
 public class TcgMove : ROMObject {
 
-    public Dictionary<TcgEnergy, byte> Cost;
+    public Dictionary<TcgType, byte> Cost;
     public string Description;
     public byte Damage;
     public TcgCategory Category;
@@ -68,13 +55,13 @@ public class TcgMove : ROMObject {
     public TcgFlag3 Flag3;
 
     public TcgMove(Tcg game, ByteStream data) {
-        uint energy = data.u32le();
-        Cost = new Dictionary<TcgEnergy, byte>();
-        for (byte i = 0; i < 8; i++) {
-            uint mask = (uint) 0xF <<  (i * 4);
-            byte count = (byte) ((energy & mask) >> (i * 4));
-            if (count > 0) {
-                Cost[(TcgEnergy) i] = count;
+        uint energy = data.u32be();
+        Cost = new Dictionary<TcgType, byte>();
+        for(byte i = 0; i < 8; i++) {
+            uint mask = (uint) 0xF << (i * 4);
+            byte count = (byte) ((energy & mask) >> (i *  4));
+            if(count > 0) {
+                Cost[(TcgType) (15 - i)] = count;
             }
         }
         Name = game.GetTextFromId(data.u16le());
@@ -93,7 +80,7 @@ public class TcgMove : ROMObject {
 
     public override string ToString() {
         string cost = "";
-        foreach (KeyValuePair<TcgEnergy, byte> pair in Cost) {
+        foreach (KeyValuePair<TcgType, byte> pair in Cost) {
             cost += String.Format("{0} {1}, ", pair.Value, pair.Key);
         }
         char[] charsToTrim  = {',', ' '};

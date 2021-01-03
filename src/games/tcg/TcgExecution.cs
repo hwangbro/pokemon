@@ -101,7 +101,8 @@ public partial class Tcg {
             "HandlePlayerMoveModeInput", // OW loop should break
             "CheckSkipDelayAllowed", // in duel skippable with B
             "WaitForWideTextBoxInput.wait_A_or_B_loop", //
-            "DisplayCardList.wait_button" // in hand/display
+            "DisplayCardList.wait_button", // in hand/display
+            "HandleDuelMenuInput" // in main duel menu
         };
 
         while(true) {
@@ -114,6 +115,63 @@ public partial class Tcg {
             } else {
                 break;
             }
+        }
+    }
+
+    public void HandScroll(int slot) {
+        int curSlot = CpuRead("wCurMenuItem") + CpuRead("wListScrollOffset");
+
+        Joypad direction = slot > curSlot ? Joypad.Down : Joypad.Up;
+        int numScrolls = Math.Abs(slot - curSlot);
+        for(int i = 0; i < numScrolls; i++) {
+            RunUntil("DisplayCardList.wait_button");
+            RunUntil(SYM["SaveButtonsHeld"] + 0x05);
+            InjectDPadRepeat(direction);
+        }
+    }
+
+    public void HandInput(Joypad joypad) {
+        RunUntil("DisplayCardList.wait_button");
+        Press(joypad);
+    }
+
+    // scrolls down to specified slot and presses A twice on the item
+    public void UseHandCard(int slot) {
+        HandScroll(slot);
+        HandInput(Joypad.A);
+        RunUntil("HandleMenuInput");
+        Press(Joypad.A);
+    }
+
+    // Presses A on one of the main duel options
+    public void UseDuelMenuOption(TcgDuelMenu option) {
+        DuelMenuScroll((byte) option);
+        DuelMenuInput(Joypad.A);
+    }
+
+    private void DuelMenuInput(Joypad joypad) {
+        RunUntil("HandleDuelMenuInput");
+        Press(joypad);
+    }
+
+    private void DuelMenuScroll(byte slot) {
+        int curSlot = CpuRead("wCurrentDuelMenuItem");
+        if(curSlot == slot) return;
+
+        if(slot % 2 != curSlot % 2) {
+            RunUntil("HandleDuelMenuInput");
+            InjectDPadRepeat(Joypad.Up);
+        }
+        int numScrolls = Math.Abs(curSlot - slot) / 2;
+        Joypad direction = curSlot > slot ? Joypad.Left : Joypad.Right;
+
+        if(numScrolls > 1) {
+            numScrolls = 1;
+            direction ^= (Joypad) 0xc0;
+        }
+        for(int i = 0; i < numScrolls; i++) {
+            RunUntil("HandleDuelMenuInput");
+            InjectDPadRepeat(direction);
         }
     }
 

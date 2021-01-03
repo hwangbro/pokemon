@@ -73,6 +73,12 @@ public class TcgCard : ROMObject {
     public TcgSet Set1;
     public TcgSet2 Set2;
     public string Description;
+    public bool IsBasic {
+        get { return this is TcgPkmnCard && ((TcgPkmnCard) this).Stage == TcgStage.Basic; }
+    }
+    public bool IsEnergy {
+        get { return this.Type <= TcgType.DoubleColorless_E && this.Type >= TcgType.Fire_E; }
+    }
 
     public TcgCard(Tcg game, ByteStream data) {
         Type = (TcgType) data.u8();
@@ -104,8 +110,8 @@ public class TcgPkmnCard : TcgCard {
     public string PreEvoName;
     public TcgMove[] Moves;
     public byte RetreatCost;
-    public TcgWeakOrResist Weakness;
-    public TcgWeakOrResist Resistance;
+    public TcgType Weakness;
+    public TcgType Resistance;
     public string Category;
     public byte PokedexNumber;
     public byte Level;
@@ -120,8 +126,9 @@ public class TcgPkmnCard : TcgCard {
             new TcgMove(game, data),
             new TcgMove(game, data) };
         RetreatCost = data.u8();
-        Weakness = (TcgWeakOrResist) data.u8();
-        Resistance = (TcgWeakOrResist) data.u8();
+
+        Weakness = GetTypeFromWeaknessResist(data.u8());
+        Resistance = GetTypeFromWeaknessResist(data.u8());
         Category = game.GetTextFromId(data.u16le());
         PokedexNumber = data.u8();
         data.Seek(1); // unused
@@ -129,5 +136,15 @@ public class TcgPkmnCard : TcgCard {
         Length = data.u16be(); // byte x byte
         Weight = data.u16le();
         Description = game.GetTextFromId(data.u16le());
+    }
+
+    public TcgType GetTypeFromWeaknessResist(byte data) {
+        for(int i = 0; i < 8; i++) {
+            if(data == (1 << i)) {
+                return (TcgType) (7 - i);
+            }
+        }
+
+        return TcgType.UNUSED_TYPE;
     }
 }
