@@ -4,41 +4,7 @@ using System.Collections.Generic;
 
 class Program {
     static void Main(string[] args) {
-        TcgTest();
-    }
-
-    // to do
-    // create a savestate with starting deck for each trainer
-    // create a method for TcgDuel that returns a heuristic of how good the duel is
-    //   should be unique for each trainer
-    //   based on basics in hand, some trainer cards, enemy basics in hand, etc
-    // look for clusters of good fights
-    public static void TcgTest() {
-        Tcg gb = new Tcg(false, "basesaves/tcg/Jennifer.sav");
-        gb.Record("test");
-        byte[] state = gb.SaveState();
-        for(int i = 0; i < 1; i++) {
-            gb.LoadState(state);
-            gb.ClearIntro();
-
-            // talk to npc
-            gb.Press(Joypad.A);
-
-            // clear text until yes no
-            gb.ClearText();
-
-            // yes no
-            gb.SayYes();
-
-            // clear text box
-            gb.RunUntil("WaitForButtonAorB");
-            // add delay frames here
-            gb.Press(Joypad.A);
-            gb.RunUntil("WaitForButtonAorB");
-            Console.WriteLine("{0:X2}{1:X2}, {2:X2}", gb.CpuRead("wRNG1"), gb.CpuRead("wRNG2"), gb.CpuRead("wRNGCounter"));
-        }
-
-        gb.Dispose();
+        Jennifer.Test2();
     }
 
     public static void SilphSimulation() {

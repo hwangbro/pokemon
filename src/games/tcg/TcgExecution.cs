@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public partial class Tcg {
 
@@ -87,22 +88,17 @@ public partial class Tcg {
     }
 
     public void ClearText() {
-        // wSkipDelayAllowed to check for b clears
-        // OW text clears are fine, duel text clears need cleaning up
         // CardListFunction wGameEvent
-        // int[] addr = {
-        //     SYM["WaitForPlayerToAdvanceText"], // actual clear condition, should clear text
-        //     SYM["HandleYesOrNoMenu"], // yes no menu needs to be handled separately
-        //     SYM["HandlePlayerMoveModeInput"], // OW loop, should exit
-        // };
-        string[] addr = {
-            "WaitForButtonAorB", // clear OW textbox breakpoint
-            "HandleYesOrNoMenu", // yes/no breaks and are handled separately
-            "HandlePlayerMoveModeInput", // OW loop should break
-            "CheckSkipDelayAllowed", // in duel skippable with B
-            "WaitForWideTextBoxInput.wait_A_or_B_loop", //
-            "DisplayCardList.wait_button", // in hand/display
-            "HandleDuelMenuInput" // in main duel menu
+        // return the exit address?
+        int[] addr = {
+            SYM["WaitForButtonAorB"], // clear OW textbox breakpoint
+            SYM["HandleYesOrNoMenu"], // yes/no breaks and are handled separately
+            SYM["HandlePlayerMoveModeInput"], // OW loop should break
+            SYM["CheckSkipDelayAllowed"], // in duel skippable with B
+            SYM["WaitForWideTextBoxInput.wait_A_or_B_loop"], //
+            SYM["DisplayCardList.wait_button"], // in hand/display
+            SYM["HandleDuelMenuInput"], // in main duel menu
+            SYM["Func_8aaa"] + 0x4f, // prize check
         };
 
         while(true) {
@@ -118,35 +114,74 @@ public partial class Tcg {
         }
     }
 
+    // run if opp arena card hp is 0?
+    public void PickPrize() {
+        RunUntil(SYM["Func_8aaa"] + 0x4f);
+        Press(Joypad.A);
+    }
+
     public void HandScroll(int slot) {
         int curSlot = CpuRead("wCurMenuItem") + CpuRead("wListScrollOffset");
 
         Joypad direction = slot > curSlot ? Joypad.Down : Joypad.Up;
         int numScrolls = Math.Abs(slot - curSlot);
         for(int i = 0; i < numScrolls; i++) {
-            RunUntil("DisplayCardList.wait_button");
+            RunUntil("HandleMenuInput");
             RunUntil(SYM["SaveButtonsHeld"] + 0x05);
             InjectDPadRepeat(direction);
+            AdvanceFrame();
         }
     }
 
-    public void HandInput(Joypad joypad) {
-        RunUntil("DisplayCardList.wait_button");
+    public void MenuInput(Joypad joypad) {
+        RunUntil("HandleMenuInput");
         Press(joypad);
     }
 
+    public void MenuScroll(int slot) {
+        int maxItemIndex = CpuRead("wNumMenuItems") - 1;
+        int numScrolls = slot;
+        Joypad dir = Joypad.Down;
+        if(slot > maxItemIndex / 2) {
+            dir = Joypad.Up;
+            numScrolls = Math.Max(1, maxItemIndex - slot + 1);
+        }
+        for(int i = 0; i < numScrolls; i++) {
+            RunUntil("HandleMenuInput");
+            RunUntil(SYM["SaveButtonsHeld"] + 0x05);
+            InjectDPadRepeat(dir);
+            AdvanceFrame();
+        }
+    }
+
     // scrolls down to specified slot and presses A twice on the item
-    public void UseHandCard(int slot) {
+    public void UseHandCard(int slot, int cardSlot = -1) {
+        UseDuelMenuOption(TcgDuelMenu.Hand);
         HandScroll(slot);
-        HandInput(Joypad.A);
+        MenuInput(Joypad.A);
         RunUntil("HandleMenuInput");
         Press(Joypad.A);
+        if(cardSlot != -1) {
+            MenuScroll(cardSlot);
+            Press(Joypad.A);
+            ClearText();
+        }
     }
 
     // Presses A on one of the main duel options
     public void UseDuelMenuOption(TcgDuelMenu option) {
         DuelMenuScroll((byte) option);
         DuelMenuInput(Joypad.A);
+    }
+
+    public void UseAttack(int slot, bool discard) {
+        UseDuelMenuOption(TcgDuelMenu.Attack);
+        MenuScroll(slot);
+        MenuInput(Joypad.A);
+        if(discard) {
+            RunUntil("HandleMenuInput");
+            MenuInput(Joypad.A);
+        }
     }
 
     private void DuelMenuInput(Joypad joypad) {
@@ -161,17 +196,19 @@ public partial class Tcg {
         if(slot % 2 != curSlot % 2) {
             RunUntil("HandleDuelMenuInput");
             InjectDPadRepeat(Joypad.Up);
+            AdvanceFrame();
         }
         int numScrolls = Math.Abs(curSlot - slot) / 2;
         Joypad direction = curSlot > slot ? Joypad.Left : Joypad.Right;
 
         if(numScrolls > 1) {
             numScrolls = 1;
-            direction ^= (Joypad) 0xc0;
+            direction ^= (Joypad) 0x30;
         }
         for(int i = 0; i < numScrolls; i++) {
             RunUntil("HandleDuelMenuInput");
             InjectDPadRepeat(direction);
+            AdvanceFrame();
         }
     }
 

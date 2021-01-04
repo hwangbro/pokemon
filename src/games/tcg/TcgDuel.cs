@@ -17,12 +17,17 @@ public class TcgDuelDeck {
     public List<TcgCard> Prizes;
     public List<TcgCard> Deck;
     // public List<TcgCard> Discard;
-    public TcgCard Active;
-    public List<TcgCard> Bench;
+    public TcgPkmnCard Active;
+    public List<TcgPkmnCard> Bench;
     public List<TcgCard> BasicsInHand {
         get { return Hand.Where(card => card.IsBasic).ToList<TcgCard>(); }
     }
-
+    public List<TcgPkmnCard> GetActives() {
+        List<TcgPkmnCard> actives = new List<TcgPkmnCard>();
+        actives.Add(Active);
+        actives.AddRange(Bench);
+        return actives;
+    }
     public void Draw() {
         if (Deck.Count == 0) return;
 
@@ -30,19 +35,13 @@ public class TcgDuelDeck {
         Deck.RemoveAt(0);
         Hand.Add(card);
     }
+}
 
-    // public (TcgType, byte) PotentialDamage() {
-    //     TcgType type;
-    //     byte dmg;
-
-    //     return (type, dmg);
-    // }
-
-    // public List<TcgCard> CanDoDamage() {
-    //     foreach(var card in Hand) {
-    //         if(card is TcgPkmnCard) {
-    //             foreach(TcgMove move in (TcgPkmnCard)(card).Moves)
-    //         }
-    //     }
-    // }
+public enum TcgDuelStatus {
+    None,
+    Confused,
+    Asleep,
+    Paralyzed,
+    Poisoned = 0x80,
+    DoublePoisoned = 0xc0,
 }
