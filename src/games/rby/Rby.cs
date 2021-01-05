@@ -110,6 +110,7 @@ public partial class Rby : GameBoy {
             LoadMaps();
             ParsedROMs[ROM.GlobalChecksum] = Data;
         }
+        SYM["igtInject"] = SYM["LoadSAV0.checkSumsMatched"] + 0x18;
     }
 
     private void LoadTypeEffectivenessTable() {

@@ -253,6 +253,7 @@ public class RedBlue : Rby {
 
     public RedBlue(string rom, string saveName, bool speedup = false) : base(rom, saveName, speedup ? SpeedupFlags.All : SpeedupFlags.None) {
         InitIntroStrats();
+        SYM["biosReadKeypad"] = 0x21d;
     }
 
     private void InitIntroStrats() {
