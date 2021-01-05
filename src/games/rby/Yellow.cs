@@ -2,6 +2,7 @@ public class Yellow : Rby {
 
     public Yellow(bool speedup = false, string saveName = "roms/pokeyellow.sav") : base("roms/pokeyellow.gbc", saveName, speedup ? SpeedupFlags.NoVideo | SpeedupFlags.NoSound : SpeedupFlags.None) {
         InitIntroStrats();
+        SYM["igtInject"] = 0x1C79D6;
     }
 
     private void InitIntroStrats() {
