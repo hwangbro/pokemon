@@ -17,6 +17,7 @@ public partial class Tcg {
     }
 
     // make generic for cards like pp/defender?
+    // probably remove
     public Dictionary<TcgType, byte> GetAttachedEnergy(byte slot) {
         Dictionary<TcgType, byte> energies = new Dictionary<TcgType, byte>();
 
@@ -33,6 +34,45 @@ public partial class Tcg {
             }
         }
         return energies;
+    }
+
+    public TcgBattleCard GetBattleCard(byte slot, bool enemy) {
+        string baseName = enemy ? "wEnemy" : "wPlayer";
+        TcgDuelDeck deck = enemy ? OppDeck : MyDeck;
+        RAMStream cardLocations = From(baseName + "CardLocations");
+        if(slot == 0) {
+            baseName += "ArenaCard";
+        } else {
+            baseName += "Bench" + slot.ToString() + "Card";
+        }
+
+        TcgBattleCard battleCard = new TcgBattleCard();
+        battleCard.CurHP = CpuRead(baseName + "HP");
+        battleCard.Pluspower = CpuRead(baseName + "AttachedPluspower");
+        battleCard.Defender = CpuRead(baseName + "AttachedDefender");
+        if(slot == 0) {
+            battleCard.Status = (TcgDuelStatus) CpuRead(baseName + "Status");
+            battleCard.Substatus1 = CpuRead(baseName + "Substatus1");
+            battleCard.Substatus2 = CpuRead(baseName + "Substatus2");
+            battleCard.Substatus3 = CpuRead(baseName + "Substatus3");
+        }
+
+        battleCard.Energies = new List<TcgType>();
+
+        // change function to parse all battlecards at once?
+        for(int i = 0; i < 60; i++) {
+            TcgCard card = deck.Cards[i];
+            byte target = (byte) (0x10 + slot);
+            if(cardLocations.u8() == target) {
+                if(card.IsEnergy) {
+                    battleCard.Energies.Add(card.Type);
+                } else if(card is TcgPkmnCard) {
+                    battleCard.Card = (TcgPkmnCard) card;
+                }
+            }
+        }
+
+        return battleCard;
     }
 
     private TcgDuelDeck ReadDuelDeck(RAMStream cardList, RAMStream data, byte cardsNotInDeck, byte cardsInHand, byte cardsInBench) {
@@ -85,6 +125,7 @@ public partial class Tcg {
         return deck;
     }
 
+    // probably remove
     public bool OneTurnWin() {
         // add more trainer card checking
         bool goingFirst = PredictCoinFlip();
@@ -122,6 +163,7 @@ public partial class Tcg {
         return (TcgPkmnCard) OppDeck.Hand.Where(card => card is TcgPkmnCard && ((TcgPkmnCard) card).Stage == TcgStage.Basic).First();
     }
 
+    // should move to execution probably
     public void EquipNeededEnergy(byte slot) {
         if(CpuRead("wAlreadyPlayedEnergy") == 1) return;
         TcgDuelDeck myDeck = MyDeck;
@@ -139,6 +181,7 @@ public partial class Tcg {
         }
     }
 
+    // should move to execution
     public bool UseBestMove() {
         byte damage = 0;
         TcgPkmnCard active = MyDeck.Active;
@@ -161,6 +204,7 @@ public partial class Tcg {
 
     // returns dictionary of remaining energy costs required for a move
     // if item values are all 0, you can use the move
+    // now redundant because of tcgbattlecard?
     public SortedDictionary<TcgType, byte> CanUseMove(byte slot, byte moveIndex) {
         Dictionary<TcgType, byte> attached = GetAttachedEnergy(slot);
         TcgPkmnCard card = MyDeck.GetActives()[slot];
@@ -204,6 +248,7 @@ public partial class Tcg {
     }
 
     // only checks first moves
+    // probably remove
     public Dictionary<TcgCard, TcgMove> PotentialOneTurnMoves() {
         TcgDuelDeck myDeck = MyDeck;
         Dictionary<TcgCard, TcgMove> ret = new Dictionary<TcgCard, TcgMove>();
@@ -220,6 +265,7 @@ public partial class Tcg {
     }
 
     // main "AI" routine
+    // move to execution
     public void DoTurn() {
         TcgDuelDeck myDeck = MyDeck;
         // add trainer cards
