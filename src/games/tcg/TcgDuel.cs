@@ -54,6 +54,7 @@ public class TcgBattleCard {
     public byte Pluspower;
     public byte Defender;
     public TcgDuelStatus Status;
+    public byte Flags;
     public byte Substatus1;
     public byte Substatus2;
     public byte Substatus3;
@@ -66,6 +67,18 @@ public class TcgBattleCard {
 
     public bool CanUseMove2 {
         get { return CanUseMove(1).Count == 0; }
+    }
+
+    public bool CanEvolve {
+        get { return (Flags & 0x80) > 0; }
+    }
+
+    public bool UsedLeekSlap {
+        get { return (Flags & 0x40) > 0;}
+    }
+
+    public bool UsedPkmnPower {
+        get { return (Flags & 0x20) > 0; }
     }
 
     // returns missing energies
@@ -95,5 +108,22 @@ public class TcgBattleCard {
             }
         }
         return missingEnergy;
+    }
+
+    // returns how much damage
+    public byte CalculateDamage(TcgBattleCard opp, byte moveIndex) {
+        byte curDamage = Card.Moves[moveIndex].Damage;
+        if(opp.Card.Weakness == Card.Type) {
+            curDamage *= 2;
+        } else if(opp.Card.Resistance == Card.Type) {
+            if(curDamage >= 30) {
+                curDamage -= 30;
+            } else {
+                curDamage = 0;
+            }
+        }
+        curDamage += Pluspower;
+        // account for defender here
+        return curDamage;
     }
 }

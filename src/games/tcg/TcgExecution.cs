@@ -90,6 +90,7 @@ public partial class Tcg {
     public void ClearText() {
         // CardListFunction wGameEvent
         // return the exit address?
+        // need to exit on duel end screen
         int[] addr = {
             SYM["WaitForButtonAorB"], // clear OW textbox breakpoint
             SYM["HandleYesOrNoMenu"], // yes/no breaks and are handled separately
@@ -98,7 +99,9 @@ public partial class Tcg {
             SYM["WaitForWideTextBoxInput.wait_A_or_B_loop"], //
             SYM["DisplayCardList.wait_button"], // in hand/display
             SYM["HandleDuelMenuInput"], // in main duel menu
+            SYM["HandleMenuInput"], // bench selection screen / misc menu screens
             SYM["Func_8aaa"] + 0x4f, // prize check
+            SYM["MainDuelLoop.duel_finished"] + 0x27,
         };
 
         while(true) {
@@ -118,9 +121,12 @@ public partial class Tcg {
     public void PickPrize() {
         RunUntil(SYM["Func_8aaa"] + 0x4f);
         Press(Joypad.A);
+        RunUntil(SYM["OpenCardPage"] + 0x36);
+        Press(Joypad.B);
     }
 
     public void HandScroll(int slot) {
+        RunUntil("HandleMenuInput");
         int curSlot = CpuRead("wCurMenuItem") + CpuRead("wListScrollOffset");
 
         Joypad direction = slot > curSlot ? Joypad.Down : Joypad.Up;
@@ -155,13 +161,14 @@ public partial class Tcg {
     }
 
     // scrolls down to specified slot and presses A twice on the item
-    public void UseHandCard(int slot, int cardSlot = -1) {
-        UseDuelMenuOption(TcgDuelMenu.Hand);
+    public void UseHandCard(int slot, int cardSlot = -1, bool inMenu = false) {
+        if(!inMenu) UseDuelMenuOption(TcgDuelMenu.Hand);
         HandScroll(slot);
         MenuInput(Joypad.A);
         RunUntil("HandleMenuInput");
         Press(Joypad.A);
         if(cardSlot != -1) {
+            RunUntil("HandleMenuInput");
             MenuScroll(cardSlot);
             Press(Joypad.A);
             ClearText();
@@ -179,7 +186,7 @@ public partial class Tcg {
         MenuScroll(slot);
         MenuInput(Joypad.A);
         if(discard) {
-            RunUntil("HandleMenuInput");
+            // RunUntil("HandleMenuInput");
             MenuInput(Joypad.A);
         }
     }
@@ -220,5 +227,184 @@ public partial class Tcg {
         RunUntil("HandleMenuInput.check_A_or_B");
         Press(Joypad.A);
         RunUntil("HandlePlayerMoveModeInput");
+    }
+
+    public bool EquipNeededEnergy(byte slot) {
+        TcgDuelDeck myDeck = MyDeck;
+        TcgBattleCard card = GetBattleCards()[slot];
+
+        for(byte i = 0; i < 2; i++) {
+            List<TcgType> remainingCost = card.CanUseMove(i);
+            foreach(TcgType energy in remainingCost) {
+                TcgCard energyCard;
+                if(energy == TcgType.DoubleColorless_E) {
+                    // try using preferred type for ** energies
+                    energyCard = myDeck.Hand.FirstOrDefault(item => item.Type.ToString().Contains(card.Card.Type.ToString()));
+                    if(energyCard == null) {
+                        energyCard = myDeck.Hand.FirstOrDefault(item => energy == TcgType.DoubleColorless_E && item.IsEnergy);
+                    }
+                } else {
+                    energyCard = myDeck.Hand.FirstOrDefault(item => item.Type == energy);
+                }
+
+                if(energyCard == null) {
+                    continue;
+                }
+
+                UseHandCard((byte) myDeck.Hand.IndexOf(energyCard), slot);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool UseBestMove() {
+        byte damage = 0;
+        TcgBattleCard active = GetBattleCards()[0];
+        TcgBattleCard oppActive = GetBattleCards(true)[0];
+        int moveSlot = -1;
+        bool discard = false;
+        for(byte i = 0; i < 2; i++) {
+            List<TcgType> moveCost = active.CanUseMove(i);
+            if(moveCost.Count == 0) {
+                byte curDamage = active.CalculateDamage(oppActive, i);
+                if(curDamage >= oppActive.CurHP) {
+                    moveSlot = i;
+                    discard = active.Card.Moves[i].Flag2 == TcgFlag2.DiscardEnergy;
+                    break;
+                }
+                if(curDamage > damage) {
+                    damage = curDamage;
+                    moveSlot = i;
+                    discard = active.Card.Moves[i].Flag2 == TcgFlag2.DiscardEnergy;
+                }
+            }
+        }
+        if(moveSlot == -1) return false;
+        UseAttack(moveSlot, discard);
+        return true;
+    }
+
+    // main "AI" routine
+    // move to execution
+    // returns false if duel is finished
+    public bool DoTurn() {
+        TcgBattleCard active = GetBattleCards()[0];
+        if(MyDeck.Hand.Contains(TrainerCards["Bill"])) {
+            UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Bill"]));
+            ClearText();
+        }
+        if(MyDeck.Hand.Contains(TrainerCards["Potion"]) && CpuRead("wPlayerArenaCardHP") != active.CurHP) {
+            UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Potion"]), 0);
+            active = GetBattleCards()[0];
+            ClearText();
+        }
+
+        /*
+        TODO
+            implement computer search
+                needs to have some sort of ranking of hand cards to know which are okay to discard
+                basic example: discard random energies, random basics/evo cards?
+            implement oak
+                needs to know what situation to use oak
+            implement pokeballs
+            implement switch/retreat strats
+            implement pluspower/defender
+        */
+
+        // try evolving
+        EvolveCards();
+
+        if(active.Status != TcgDuelStatus.None && MyDeck.Hand.Contains(TrainerCards["Full Heal"])) {
+            UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Full Heal"]));
+            ClearText();
+            active = GetBattleCards()[0];
+        }
+
+        // play every basic in our hand
+        //    maybe not every?
+        PlayBasics(false);
+
+        // equip energy
+        // prioritize stronger cards?
+        for(byte i = 0; i < CpuRead("wPlayerNumberOfPokemonInPlayArea"); i++) {
+            if(CpuRead("wAlreadyPlayedEnergy") == 1) {
+                break;
+            }
+            EquipNeededEnergy(i);
+        }
+
+        // always try to attack
+        // make attack more intelligent by using weakest attack that can kill
+        //    to avoid unnecessary discards?
+        // if confused, don't attack if next coin flip is tails
+        if(active.Status == TcgDuelStatus.Paralyzed) {
+            UseDuelMenuOption(TcgDuelMenu.Done);
+        } else if(GetBattleCards(true)[0].Substatus1 == 0x0d) {
+            UseDuelMenuOption(TcgDuelMenu.Done);
+        } else if(UseBestMove()) {
+            ClearText();
+            if(CpuRead("wOpponentArenaCardHP") == 0) {
+                PickPrize();
+            }
+        } else {
+            UseDuelMenuOption(TcgDuelMenu.Done);
+        }
+        ClearText();
+
+        if(CpuRead("wPlayerNumberOfPokemonInPlayArea") == 0) {
+            return true;
+        }
+
+        active = GetBattleCards()[0];
+
+        // todo prefer cards that are stronger to send in rather than always first
+        if(active.CurHP == 0) {
+            // automatically selects next bench pokemon
+            MenuInput(Joypad.A);
+            ClearText();
+        }
+
+        return CpuRead("wDuelFinished") != 0;
+    }
+
+    // todo prefer certain basics over others?
+    // limit how many basics to place so i can have "junk" cards in hand?
+    // if sending out initial active from duel start, predict opp active and send out best card?
+    //    this idea also needs to take into account energies in hand
+    public void PlayBasics(bool inMenu) {
+        while(MyDeck.BasicsInHand.Count > 0 && CpuRead("wPlayerNumberOfPokemonInPlayArea") < 6) {
+            TcgCard basicCard = MyDeck.BasicsInHand[0];
+            UseHandCard(MyDeck.Hand.IndexOf(basicCard), -1, inMenu);
+            ClearText();
+        }
+    }
+
+    public void EvolveCards() {
+        List<TcgBattleCard> cards = GetBattleCards();
+        foreach(TcgCard handCard in MyDeck.Hand) {
+            if(handCard is TcgPkmnCard) {
+                TcgPkmnCard evoCard = (TcgPkmnCard) handCard;
+                TcgBattleCard candidate = cards.Find(item => item.Card.Name == evoCard.PreEvoName);
+                if(candidate != null && candidate.CanEvolve) {
+                    UseHandCard(MyDeck.Hand.IndexOf(evoCard), cards.IndexOf(candidate));
+                }
+            }
+        }
+    }
+
+    // bench pokemon (normally indexed from 1) are indexed from 0 in this menu
+    public void Retreat(byte slot) {
+        UseDuelMenuOption(TcgDuelMenu.Retreat);
+        RunUntil("HandleMenuInput");
+        for(int i = 0; i < GetBattleCards()[0].Card.RetreatCost; i++) {
+            MenuInput(Joypad.A);
+        }
+        ClearText();
+
+        MenuScroll(slot - 1);
+        Press(Joypad.A);
+        ClearText();
     }
 }

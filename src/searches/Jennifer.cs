@@ -33,15 +33,23 @@ public static class Jennifer {
             // clear text box
             gb.RunUntil("WaitForButtonAorB");
             // add delay frames here
-            gb.AdvanceFrames(i);
+            gb.AdvanceFrames(41);
             gb.Press(Joypad.A);
             gb.RunUntil("WaitForButtonAorB");
             byte rng = gb.CpuRead("wRNGCounter");
             Console.WriteLine("{0:X2}{1:X2}, {2:X2}", gb.CpuRead("wRNG1"), gb.CpuRead("wRNG2"), gb.CpuRead("wRNGCounter"));
 
             gb.ClearText();
-            TcgDuelDeck myDeck = gb.MyDeck;
-            TcgDuelDeck oppDeck = gb.OppDeck;
+            gb.PlayBasics(true);
+            gb.MenuInput(Joypad.B);
+            gb.ClearText();
+
+            while(!gb.DoTurn()) {
+
+            }
+
+            // TcgDuelDeck myDeck = gb.MyDeck;
+            // TcgDuelDeck oppDeck = gb.OppDeck;
 
             // need to predict more than one turn wins, or refine one turn wins
             // can start by looking at AI https://github.com/pret/poketcg/blob/master/src/engine/bank08.asm
@@ -55,25 +63,7 @@ public static class Jennifer {
             // rank what basic pokemon to put on bench first
             // use trainer cards if applicable
 
-            double score = GetScore(gb);
-            if(score > 0) {
-                if(score == 1) {
-                    Console.WriteLine("winner winner");
-                }
-                continue;
-            }
 
-            foreach(TcgPkmnCard card in gb.MyDeck.BasicsInHand) {
-                int index = gb.MyDeck.Hand.IndexOf(card);
-                gb.UseHandCard(index);
-                gb.ClearText();
-            }
-
-            gb.MenuInput(Joypad.B);
-            gb.ClearText();
-            gb.UseDuelMenuOption(TcgDuelMenu.Attack);
-
-            Console.WriteLine("\n\nHand\n{0}", String.Join("\n", gb.MyDeck.Hand.Select(item => item.Name).ToArray()));
             gb.AdvanceFrames(100);
         }
 
@@ -85,9 +75,18 @@ public static class Jennifer {
         gb.LoadState("test.gqs");
         gb.Record("test");
 
-        gb.DoTurn();
-        gb.DoTurn();
-        gb.DoTurn();
+
+        // gb.EquipNeededEnergy(1);
+        // List<TcgBattleCard> cards = gb.GetBattleCards(true);
+
+        for(int i = 0; i < 6; i++) {
+            gb.DoTurn();
+        }
+
+        // gb.SaveState("test2.gqs");
+
+        // gb.UseDuelMenuOption(TcgDuelMenu.Hand);
+        // gb.HandScroll(8);
 
         gb.AdvanceFrames(100);
 
@@ -97,8 +96,8 @@ public static class Jennifer {
     public static double GetScore(Tcg gb) {
         if(gb.OppDeck.BasicsInHand.Count() > 2) {
             return -1;
-        } else if(gb.OneTurnWin()) {
-            return 1;
+        // } else if(gb.OneTurnWin()) {
+        //     return 1;
         } else if(gb.OppDeck.BasicsInHand.Count() == 1) {
             return 0.5;
         } else {
