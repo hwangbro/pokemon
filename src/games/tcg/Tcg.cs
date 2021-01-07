@@ -78,7 +78,7 @@ public partial class Tcg : GameBoy {
         for(int i = 0; i < numCards; i++) {
             ByteStream cardStream = ROM.From(0xC << 16 | pointerStream.u16le());
             TcgType type = (TcgType) cardStream.Peek();
-            if (type <= TcgType.Colorless) {
+            if(type <= TcgType.Colorless) {
                 TcgPkmnCard card = new TcgPkmnCard(this, cardStream);
                 PkmnCards.Add(card);
                 Cards.Add(card);
@@ -123,14 +123,14 @@ public partial class Tcg : GameBoy {
         hl = (ushort) ((hl & 0x00FF) | (de & 0xFF00));
 
         // rl h
-        hl2 = ((ushort)(hl & 0xFF00)).RotateLeft(ref c);
+        hl2 = ((ushort) (hl & 0xFF00)).RotateLeft(ref c);
         hl = (ushort) (hl2 | (hl & 0x00FF));
 
         // rla
         a.RotateLeft(ref c);
 
         // rl h
-        hl2 = ((ushort)(hl & 0xFF00)).RotateLeft(ref c);
+        hl2 = ((ushort) (hl & 0xFF00)).RotateLeft(ref c);
         hl = (ushort) (hl2 | (hl & 0x00FF));
 
         // rla
@@ -142,8 +142,8 @@ public partial class Tcg : GameBoy {
         de = (ushort) (de | 0x4000); // set 6, d
 
         hl = de;
-        int namePointer = (bank << 16 |  hl) + 1;
+        int namePointer = (bank << 16 | hl) + 1;
 
-        return Charmap.Decode(ROM.From(namePointer).Until(TcgCharmap.Terminator));;
+        return Charmap.Decode(ROM.From(namePointer).Until(TcgCharmap.Terminator)); ;
     }
 }

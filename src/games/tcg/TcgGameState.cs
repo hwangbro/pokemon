@@ -106,8 +106,6 @@ public partial class Tcg {
                 deck.Bench.Add((TcgPkmnCard) deck.Cards[data.u8()]);
             }
         }
-
-
         return deck;
     }
 
@@ -122,7 +120,7 @@ public partial class Tcg {
 
         byte ahi = (byte) ((wRNG2 >> 6));
         byte a = (byte) (wRNG2 << 2);
-        a = (byte) ((a + ahi) ^ wRNG1 );
+        a = (byte) ((a + ahi) ^ wRNG1);
         byte storeF = (byte) (a & 0b1);
         // byte storeA = (byte) ((a >> 1) & 0xFF);
 

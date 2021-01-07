@@ -30,7 +30,7 @@ public class TcgDuelDeck {
         return actives;
     }
     public void Draw() {
-        if (Deck.Count == 0) return;
+        if(Deck.Count == 0) return;
 
         TcgCard card = Deck[0];
         Deck.RemoveAt(0);
@@ -74,7 +74,7 @@ public class TcgBattleCard {
     }
 
     public bool UsedLeekSlap {
-        get { return (Flags & 0x40) > 0;}
+        get { return (Flags & 0x40) > 0; }
     }
 
     public bool UsedPkmnPower {
@@ -92,7 +92,7 @@ public class TcgBattleCard {
                 if(cost.Key == TcgType.DoubleColorless_E) {
                     if(EnergyCopy.Count == 0) {
                         missingEnergy.Add(TcgType.DoubleColorless_E);
-                    } else if (EnergyCopy.Where(item => !item.ToString().Contains(Card.Type.ToString())).Count() > 1) {
+                    } else if(EnergyCopy.Where(item => !item.ToString().Contains(Card.Type.ToString())).Count() > 1) {
                         // if you have energies that are not your type, use those first
                         EnergyCopy.Remove(EnergyCopy.Find(item => !item.ToString().Contains(Card.Type.ToString())));
                     } else {

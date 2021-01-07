@@ -11,13 +11,13 @@ public class TcgDeck : ROMObject {
 
         do {
             count = data.u8();
-            if (count > 0) {
-                for (int j = 0; j < count; j++) {
+            if(count > 0) {
+                for(int j = 0; j < count; j++) {
                     Cards.Add(game.Cards[data.Peek()]);
                 }
                 data.Seek(1);
             }
-        } while (count != 0);
+        } while(count != 0);
 
 
         Name = game.GetTextFromId(data.u16le());

@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 class Program {
     static void Main(string[] args) {
-        Jennifer.Test2();
+        Jennifer.Test();
     }
 
     public static void SilphSimulation() {

@@ -106,7 +106,7 @@ public partial class Tcg {
 
         while(true) {
             int ret = RunUntil(addr);
-            if (ret == SYM["WaitForButtonAorB"] || ret == SYM["WaitForWideTextBoxInput.wait_A_or_B_loop"]) {
+            if(ret == SYM["WaitForButtonAorB"] || ret == SYM["WaitForWideTextBoxInput.wait_A_or_B_loop"]) {
                 Press(Joypad.A);
             } else if(ret == SYM["CheckSkipDelayAllowed"]) {
                 InjectKeysHeld(Joypad.B);
@@ -334,6 +334,11 @@ public partial class Tcg {
             }
             EquipNeededEnergy(i);
         }
+        if(CpuRead("wAlreadyPlayedEnergy") == 0 && MyDeck.Hand.Contains(TrainerCards["Professor Oak"])) {
+            UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Professor Oak"]));
+            ClearText();
+            DoTurn();
+        }
 
         // always try to attack
         // make attack more intelligent by using weakest attack that can kill
@@ -374,7 +379,7 @@ public partial class Tcg {
     // if sending out initial active from duel start, predict opp active and send out best card?
     //    this idea also needs to take into account energies in hand
     public void PlayBasics(bool inMenu) {
-        while(MyDeck.BasicsInHand.Count > 0 && CpuRead("wPlayerNumberOfPokemonInPlayArea") < 6) {
+        while(MyDeck.BasicsInHand.Count > 0 && CpuRead("wPlayerNumberOfPokemonInPlayArea") < 3) {
             TcgCard basicCard = MyDeck.BasicsInHand[0];
             UseHandCard(MyDeck.Hand.IndexOf(basicCard), -1, inMenu);
             ClearText();

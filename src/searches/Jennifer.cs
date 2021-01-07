@@ -33,9 +33,10 @@ public static class Jennifer {
             // clear text box
             gb.RunUntil("WaitForButtonAorB");
             // add delay frames here
-            gb.AdvanceFrames(41);
+            gb.AdvanceFrames(45);
             gb.Press(Joypad.A);
             gb.RunUntil("WaitForButtonAorB");
+            gb.SaveState("test3.gqs");
             byte rng = gb.CpuRead("wRNGCounter");
             Console.WriteLine("{0:X2}{1:X2}, {2:X2}", gb.CpuRead("wRNG1"), gb.CpuRead("wRNG2"), gb.CpuRead("wRNGCounter"));
 
@@ -66,29 +67,6 @@ public static class Jennifer {
 
             gb.AdvanceFrames(100);
         }
-
-        gb.Dispose();
-    }
-
-    public static void Test2() {
-        Tcg gb = new Tcg();
-        gb.LoadState("test.gqs");
-        gb.Record("test");
-
-
-        // gb.EquipNeededEnergy(1);
-        // List<TcgBattleCard> cards = gb.GetBattleCards(true);
-
-        for(int i = 0; i < 6; i++) {
-            gb.DoTurn();
-        }
-
-        // gb.SaveState("test2.gqs");
-
-        // gb.UseDuelMenuOption(TcgDuelMenu.Hand);
-        // gb.HandScroll(8);
-
-        gb.AdvanceFrames(100);
 
         gb.Dispose();
     }

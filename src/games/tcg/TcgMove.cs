@@ -26,7 +26,7 @@ public enum TcgFlag1 : byte {
 
 public enum TcgFlag2 : byte {
 
-    None                = 0,
+    None                    = 0,
     SwitchOppPokemon        = 1 << 0b000,
     HealUser                = 1 << 0b001,
     NullifyOrWeaken         = 1 << 0b010,
