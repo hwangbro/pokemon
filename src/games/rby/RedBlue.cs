@@ -285,6 +285,7 @@ public class RedBlue : Rby {
 public class Red : RedBlue {
 
     public Red(bool speedup = false, string saveName = "roms/pokered.sav") : base("roms/pokered.gbc", saveName, speedup) { }
+    public Red() : base("roms/pokered.gbc", "roms/pokered.sav", false) { }
 
     public override byte[][] BGPalette() {
         return new byte[][] {
