@@ -3,6 +3,14 @@
 
 class Program {
     static void Main(string[] args) {
+        // Red gb = new Red();
+
+        RedSimulation2 a = new RedSimulation2();
+        string[] initialStates = new string[] {"basesaves/red/silpharbok.gqs", "basesaves/red/silphrival.gqs", "basesaves/red/cubonerocket.gqs",
+                                               "basesaves/red/silphgio.gqs", "basesaves/red/hypno.gqs"};
+        RedSimulation2.ActionCallback[] actions = new RedSimulation2.ActionCallback[] {a.Arbok, a.SilphRival, a.CuboneRocket, a.SilphGio, a.Hypno};
+
+        a.Simulate("simulation/red/silphrival", 1, 10, initialStates, actions);
     }
 
     public static void RedTest() {

@@ -235,6 +235,10 @@ public partial class GameBoy : IDisposable {
         return CpuRead(SYM[addr]);
     }
 
+    public virtual void RandomizeRNG(Random random) {
+        throw new NotImplementedException();
+    }
+
     // Helper function that creates a basic scene graph with a video buffer component.
     public void Show() {
         Scene s = new Scene(this, 160, 144);
