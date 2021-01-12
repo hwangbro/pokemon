@@ -28,7 +28,7 @@ class Program {
     }
 
     public static void SilphSimulation() {
-        RedSimulation2 a = new RedSimulation2();
+        SilphSimulations a = new SilphSimulations();
         string[] initialStates = new string[] {
             "basesaves/red/silpharbok.gqs",
             "basesaves/red/silphrival.gqs",
@@ -38,8 +38,8 @@ class Program {
             "basesaves/red/hypno.gqs",
             "basesaves/red/koga.gqs"
             };
-        RedSimulation2.ActionCallback[] actions =
-            new RedSimulation2.ActionCallback[] {
+        SilphSimulations.ActionCallback[] actions =
+            new SilphSimulations.ActionCallback[] {
                 a.Arbok,
                 a.SilphRival,
                 a.CuboneRocket,
@@ -49,8 +49,8 @@ class Program {
                 a.Koga
             };
 
-        RedSimulation2.ActionCallback[] actions2 =
-            new RedSimulation2.ActionCallback[] {
+        SilphSimulations.ActionCallback[] actions2 =
+            new SilphSimulations.ActionCallback[] {
                 a.ArbokThrash,
                 a.SilphRivalNormal,
                 a.CuboneRocketNormal,
