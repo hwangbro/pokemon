@@ -197,7 +197,7 @@ public static class Totodile {
     public static void StartSearch(int numThreads) {
         bool[] threadsRunning = new bool[numThreads];
         Thread[] threads = new Thread[numThreads];
-        Gsc dummyGb = new Gsc("roms/pokegold.gbc");
+        Gsc dummyGb = new Gold();
         GscMap map = dummyGb.Maps[6149];
         map.Sprites.Remove(5, 3); // Remove police officer (https://gunnermaniac.com/pokeworld2?map=6149#5/3)
         Pathfinding.GenerateEdges(map, 0, 17, map.Tileset.LandPermissions, Action.Right | Action.Down | Action.StartB, map[7, 5]);
@@ -250,7 +250,7 @@ public static class Totodile {
                                             Gsc gb;
                                             lock(startTiles) {
                                                 MakeSave(state.tile.X, state.tile.Y, state.hour, state.minute, state.momStep, state.audio, state.frameType, state.menuAccount, state.igt);
-                                                gb = new Gsc("roms/pokegold.gbc");
+                                                gb = new Gold();
                                                 gb.SetSpeedupFlags(SpeedupFlags.NoSound | SpeedupFlags.NoVideo);
                                                 gb.Hold(Joypad.Start, 0x100);
                                                 byte[] timesecState = gb.SaveState();
