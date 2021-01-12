@@ -56,8 +56,6 @@ public abstract class SilphSimulation<Gb, Result> where Gb : GameBoy
         for(int i = 0; i < initialStates.Length; i++) {
             states.Add(File.ReadAllBytes(initialStates[i]));
         }
-        // byte[] state = File.ReadAllBytes("basesaves/red/silpharbok.gqs");
-        // TransformInitialState(gbs[0], 113, ref state);
 
         // Initialize a random object to vary the RNG in the simulations
         int seed = (int) DateTime.Now.Ticks & 0x0000FFFF;

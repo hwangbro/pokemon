@@ -9,7 +9,6 @@ public class RedResult2 : SilphResult {
 
 public class RedSimulation2 : SilphSimulation<Red, RedResult2> {
 
-
     public RedSimulation2() { }
 
     public bool Arbok(Red gb, Dictionary<string, object> memory) {
