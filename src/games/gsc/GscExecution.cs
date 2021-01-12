@@ -70,7 +70,8 @@ public partial class Gsc {
         int[] textAdvanceAddrs = {
             SYM["PromptButton.input_wait_loop"] + 0x6,
             SYM["WaitPressAorB_BlinkCursor.loop"] + 0xb,
-            SYM["JoyWaitAorB.loop"] + 0x6
+            SYM["JoyWaitAorB.loop"] + 0x6,
+            (SYM["BattlePack.loop"] + 0x3) & 0xFFFF,
         };
 
         int stackPointer;
@@ -123,109 +124,90 @@ public partial class Gsc {
         }
     }
 
-    public void Swap(int targetPokeIndex, bool dead = false) {
-        int curSlot = Math.Max(CpuRead("wPartyMenuCursor"), (byte) 1);
-        Joypad joypad = targetPokeIndex > curSlot ? Joypad.Down : Joypad.Up;
-        int numScrolls = Math.Abs(curSlot - targetPokeIndex);
-
-        if(!dead) {
-            OpenPkmnMenu();
-            Hold(joypad, "InitPartyMenuWithCancel");
+    public void Swap(int target) {
+        if(CpuReadBE<ushort>("wBattleMonHP") != 0) {
+            if(CpuRead("wMenuCursorX") != 0x2) MenuPress(Joypad.Right);
+            SelectMenuItem(1);
         }
 
-        RunUntil("GetJoypad");
-
-        for(int i = 0; i < numScrolls; i++) {
-            ScrollBag(joypad);
-        }
-        Press(Joypad.A, Joypad.None, Joypad.A);
+        SelectMenuItem(target);
+        MenuPress(Joypad.A);
     }
 
-    public void UseMove(int slot, int numMoves = 4) {
-        OpenFightMenu();
-        int currentSlot = CpuRead("wCurMoveNum") + 1;
-        int difference = currentSlot - slot;
-        int numSlots = difference == 0 ? 0 : slot % 2 == currentSlot % 2 ? (int)(numMoves/2) : 1;
-        Joypad joypad = (((Math.Abs(difference * numMoves) + difference) % numMoves) & 2) != 0 ? Joypad.Down : Joypad.Up;
-        switch(numSlots) {
-            case 0: Press(Joypad.None); break;
-            case 1: Press(joypad); break;
-            case 2: Press(joypad, Joypad.None, joypad); break;
-            default: Press(Joypad.None); break;
-        }
-        Press(Joypad.A);
+    private void UseMove(int slot) {
+        if(CpuRead("wMenuCursorX") != 0x1) MenuPress(Joypad.Left);
+        SelectMenuItem(1);
+        SelectMenuItem(slot);
     }
 
-    public void UseItem(string name, int targetPokeIndex = -1) {
-        Dictionary<string, byte> bag = GetBag();
-        if(!bag.ContainsKey(name)) {
-            throw new Exception($"Item {name} does not exist in bag");
-        }
-        ScrollToItem(bag[name]);
-        Press(Joypad.A, Joypad.None, Joypad.A);
-
-        if(targetPokeIndex != -1) {
-            RunUntil("InitPartyMenuWithCancel");
-            AdvanceFrame();
-            RunUntil("GetJoypad");
-            AdvanceFrame();
-            RunUntil("GetJoypad");
-            Press(Joypad.A);
-        }
+    public void UseMove1() {
+        UseMove(1);
     }
 
-    public void ScrollToItem(int slot) {
-        int curBagPos = Math.Max(CpuRead("wItemsPocketCursor"), (byte) 1);
-        int curScreenScroll = CpuRead("wItemsPocketScrollPosition");
-        int curSlot = curBagPos + curScreenScroll;
-        Joypad joypad = slot > curSlot ? Joypad.Down : Joypad.Up;
-        int numScrolls = Math.Abs(curSlot - slot);
+    public void UseMove2() {
+        UseMove(2);
+    }
 
-        OpenItemBag();
-        Hold(joypad, "ScrollingMenu");
-        RunUntil("GetJoypad");
+    public void UseMove3() {
+        UseMove(3);
+    }
 
-        for(int i = 0; i < numScrolls; i++) {
-            ScrollBag(joypad);
+    public void UseMove4() {
+        UseMove(4);
+    }
+
+    public void UseItem(string item, int target = -1) {
+        UseItem(Items[item], target);
+    }
+
+    public void UseItem(GscItem item, int target) {
+        GscBag bag = ItemBag;
+        if(CpuRead("wMenuCursorX") != 0x1) MenuPress(Joypad.Left);
+        SelectMenuItem(2);
+        SelectBagItem(bag.IndexOf(item) + 1);
+
+        switch(item.ExecutionPointerLabel) {
+            case "StatusHealingEffect":
+            case "FullRestoreEffect":
+            case "RestoreHPEffect":
+                SelectMenuItem(target != -1 ? target : CpuRead("wMenuCursorY"));
+                MenuPress(Joypad.A, Joypad.B);
+                break;
+            case "XAccuracyEffect":
+            case "XItemEffect":
+                RunUntil(SYM["WaitPressAorB_BlinkCursor"]);
+                Inject(Joypad.B);
+                AdvanceFrame(Joypad.B);
+                break;
         }
     }
 
-    public Dictionary<string, byte> GetBag() {
-        Dictionary<string, byte> bag = new Dictionary<string, byte>();
+    // starts from 1
+    public void SelectMenuItem(int target) {
+        RunUntil("GetMenuJoypad");
+        MenuScroll(target, CpuRead("wMenuCursorY"), CpuRead("w2DMenuNumRows"), (CpuRead("w2DMenuFlags1") & 0x20) > 0);
+    }
 
-        int addr = SYM["wItems"];
-        byte index = 1;
-        while(CpuRead(addr) != 0xFF) {
-            GscItem item = Items[CpuRead(addr++) - 1];
-            byte quantity = CpuRead(addr++);
-            bag[item.Name] = index++;
+    public void SelectBagItem(int target) {
+        RunUntil("GetMenuJoypad");
+        MenuScroll(target, CpuRead("wMenuCursorY") + CpuRead("wMenuScrollPosition"), CpuRead("wNumItems"), (CpuRead("w2DMenuFlags1") & 0x20) > 0);
+        MenuPress(Joypad.A);
+    }
+
+    public void MenuScroll(int target, int current, int max, bool wrapping) {
+        Joypad input = target < current ? Joypad.Up : Joypad.Down;
+        int amount = Math.Abs(current - target);
+
+        if(wrapping && amount > max / 2) {
+            amount = max - amount;
+            input ^= (Joypad) 0xc0;
         }
 
-        return bag;
-    }
+        for(int i = 0; i < amount; i++) {
+            MenuPress(input);
+        }
 
-    public void ScrollBag(Joypad joypad) {
-        Hold(joypad, "GetJoypad");
-        MenuPress(joypad);
-        AdvanceFrame();
-    }
-
-    public void OpenFightMenu() {
-        if(CpuRead("wMenuCursorY") == 2) Press(Joypad.Up);
-        if(CpuRead("wMenuCursorX") == 2) Press(Joypad.Left);
-        Press(Joypad.A);
-    }
-
-    public void OpenPkmnMenu() {
-        if(CpuRead("wMenuCursorY") == 2) Press(Joypad.Up);
-        if(CpuRead("wMenuCursorX") == 1) Press(Joypad.Right);
-        Press(Joypad.A);
-    }
-
-    public void OpenItemBag() {
-        if(CpuRead("wMenuCursorY") == 1) Press(Joypad.Down);
-        if(CpuRead("wMenuCursorX") == 2) Press(Joypad.Left);
-        Press(Joypad.A);
+        MenuPress(Joypad.A);
     }
 
     public override int WalkTo(int targetX, int targetY) {
