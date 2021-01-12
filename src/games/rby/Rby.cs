@@ -112,6 +112,7 @@ public partial class Rby : GameBoy {
         }
         SYM["igtInject"] = SYM["LoadSAV0.checkSumsMatched"] + 0x18;
         OverworldLoopAddress = SYM["JoypadOverworld"];
+        SYM["rDIV"] = 0xFF04;
     }
 
     private void LoadTypeEffectivenessTable() {

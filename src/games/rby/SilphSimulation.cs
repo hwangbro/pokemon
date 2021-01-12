@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.IO;
 using Newtonsoft.Json;
@@ -17,6 +18,7 @@ public class SilphResult {
 
     public bool[] FightResults;
     public bool StillHaveParaHeals;
+    public bool Final;
 
     [JsonIgnore]
     public int Cycles;
@@ -46,12 +48,12 @@ public abstract class SilphSimulation<Gb, Result> where Gb : GameBoy
         Thread[] threads = new Thread[numThreads];
 
         Gb[] gbs = MultiThread.MakeThreads<Gb>(numThreads);
-        gbs[0].Record("test");
+        // gbs[0].Record("test");
 
         // Load the starting save state and transform the initial state
         // This transformation is usually setting the starting HP and advancing to the battle menu
         List<byte[]> states = new List<byte[]>();
-        for(int i = 0; i < 5; i++) {
+        for(int i = 0; i < initialStates.Length; i++) {
             states.Add(File.ReadAllBytes(initialStates[i]));
         }
         // byte[] state = File.ReadAllBytes("basesaves/red/silpharbok.gqs");
@@ -61,12 +63,16 @@ public abstract class SilphSimulation<Gb, Result> where Gb : GameBoy
         int seed = (int) DateTime.Now.Ticks & 0x0000FFFF;
         Random random = new Random(seed);
 
-
         MultiThread.For(numSimulations, gbs, (gb, iterator) => {
+            int curSim;
+            lock(writeLock) {
+                curSim = numSims++;
+                Console.WriteLine("Starting sim: {0}", curSim++);
+            }
             ushort hp = 113;
             Result result = new Result();
             result.Cycles = 0;
-            result.FightResults = new bool[] {false, false, false, false, false};
+            result.FightResults = new bool[] {false, false, false, false, false, false, true};
             result.StillHaveParaHeals = true;
             Dictionary<string, object> memory = new Dictionary<string, object>();
             List<byte[]> statesCopy = new List<byte[]>(states);
@@ -85,6 +91,7 @@ public abstract class SilphSimulation<Gb, Result> where Gb : GameBoy
                 lock(randomLock) {
                     gb.LoadState(state);
                     gb.RandomizeRNG(random);
+                    // Console.WriteLine("sim: #{0} rng: {1:X2} {2:X2} {3:X2}", curSim, gb.CpuRead(0xFF04), gb.CpuRead(0xFFD3), gb.CpuRead(0xFFD4));
                     start = gb.TimeNow;
                 }
 
@@ -101,11 +108,9 @@ public abstract class SilphSimulation<Gb, Result> where Gb : GameBoy
 
                 result.Cycles += (gb.TimeNow - start);
                 hp = (ushort) memory["hpLeft"];
-                if((ushort) memory["hpLeft"] == 0) {
+                if(hp == 0) {
                     finished = true;
                     continue;
-                } else if(i == 3) {
-                    hp += 3;
                 }
 
                 result.FightResults[i] = true;
@@ -114,7 +119,9 @@ public abstract class SilphSimulation<Gb, Result> where Gb : GameBoy
                 }
             }
             lock(writeLock) {
+                result.Final = (new List<bool>(result.FightResults).Where(item => !item).Count()) == 0;
                 Results.Add(result);
+                Console.WriteLine("sim: #{0} finished", curSim);
             }
         });
 

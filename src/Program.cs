@@ -6,11 +6,36 @@ class Program {
         // Red gb = new Red();
 
         RedSimulation2 a = new RedSimulation2();
-        string[] initialStates = new string[] {"basesaves/red/silpharbok.gqs", "basesaves/red/silphrival.gqs", "basesaves/red/cubonerocket.gqs",
-                                               "basesaves/red/silphgio.gqs", "basesaves/red/hypno.gqs"};
-        RedSimulation2.ActionCallback[] actions = new RedSimulation2.ActionCallback[] {a.Arbok, a.SilphRival, a.CuboneRocket, a.SilphGio, a.Hypno};
+        string[] initialStates = new string[] {
+                                               "basesaves/red/silpharbok.gqs",
+                                               "basesaves/red/silphrival.gqs",
+                                               "basesaves/red/cubonerocket.gqs",
+                                               "basesaves/red/silphgio.gqs",
+                                               "basesaves/red/juggler1.gqs",
+                                               "basesaves/red/hypno.gqs",
+                                               "basesaves/red/koga.gqs"
+                                               };
+        RedSimulation2.ActionCallback[] actions = new RedSimulation2.ActionCallback[] {
+                                                                                       a.Arbok,
+                                                                                       a.SilphRival,
+                                                                                       a.CuboneRocket,
+                                                                                       a.SilphGio,
+                                                                                       a.Juggler1,
+                                                                                       a.Hypno,
+                                                                                       a.Koga
+                                                                                       };
 
-        a.Simulate("simulation/red/silphrival", 1, 10, initialStates, actions);
+        RedSimulation2.ActionCallback[] actions2 = new RedSimulation2.ActionCallback[] {
+                                                                                       a.ArbokThrash,
+                                                                                       a.SilphRivalNormal,
+                                                                                       a.CuboneRocketNormal,
+                                                                                       a.SilphGio,
+                                                                                       a.Juggler1,
+                                                                                       a.Hypno,
+                                                                                       a.Koga
+                                                                                       };
+
+        a.Simulate("simulation/red/silphbar/nosilphbar", 16, 25000, initialStates, actions2);
     }
 
     public static void RedTest() {

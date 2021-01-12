@@ -201,6 +201,7 @@ public partial class Rby {
         SelectListItem(Bag.IndexOf(item));
 
         switch(item.ExecutionPointerLabel) {
+            case "ItemUsePPRestore":
             case "ItemUseMedicine":
                 SelectMenuItem(target != -1 ? target : CpuRead("wCurrentMenuItem"));
                 MenuPress(Joypad.A, Joypad.B);
