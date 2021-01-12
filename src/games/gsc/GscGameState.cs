@@ -58,6 +58,20 @@ public partial class Gsc {
         get { return CpuRead("wYCoord"); }
     }
 
+    public GscBag ItemBag {
+        get {
+            GscBag bag = new GscBag();
+            bag.Game = this;
+            bag.NumItems = CpuRead("wNumItems");
+            bag.Items = new GscItemStack[bag.NumItems];
+            RAMStream data = From("wItems");
+            for(int i = 0; i < bag.Items.Length; i++) {
+                bag.Items[i] = new GscItemStack(Items[data.u8() - 1], data.u8());
+            }
+            return bag;
+        }
+    }
+
     // TODO: Box structs, Party structs
 
     private GscPokemon ReadBattleStruct(RAMStream data, RAMStream modifiers, RAMStream battleStatus, int screensAddr) {
