@@ -3,37 +3,62 @@
 
 class Program {
     static void Main(string[] args) {
-        // Red gb = new Red();
 
+    }
+
+    public static void CrystalTest() {
+        Crystal gb = new Crystal(false);
+        gb.LoadState("basesaves/crystal/karen_xacc.gqs");
+        gb.Record("test");
+        gb.RunUntil("PlayCry");
+        gb.RunUntil("GetJoypad");
+        gb.UseItem("X ACCURACY");
+        gb.ClearText(false);
+        gb.UseMove3();
+        gb.ClearText(false);
+        gb.UseItem("FULL RESTORE");
+        gb.ClearText(false);
+        gb.Swap(4);
+        gb.ClearText(false);
+        gb.UseMove1();
+        gb.ClearText(false);
+        gb.Swap(1);
+        gb.ClearText(false);
+        gb.Dispose();
+    }
+
+    public static void SilphSimulation() {
         RedSimulation2 a = new RedSimulation2();
         string[] initialStates = new string[] {
-                                               "basesaves/red/silpharbok.gqs",
-                                               "basesaves/red/silphrival.gqs",
-                                               "basesaves/red/cubonerocket.gqs",
-                                               "basesaves/red/silphgio.gqs",
-                                               "basesaves/red/juggler1.gqs",
-                                               "basesaves/red/hypno.gqs",
-                                               "basesaves/red/koga.gqs"
-                                               };
-        RedSimulation2.ActionCallback[] actions = new RedSimulation2.ActionCallback[] {
-                                                                                       a.Arbok,
-                                                                                       a.SilphRival,
-                                                                                       a.CuboneRocket,
-                                                                                       a.SilphGio,
-                                                                                       a.Juggler1,
-                                                                                       a.Hypno,
-                                                                                       a.Koga
-                                                                                       };
+            "basesaves/red/silpharbok.gqs",
+            "basesaves/red/silphrival.gqs",
+            "basesaves/red/cubonerocket.gqs",
+            "basesaves/red/silphgio.gqs",
+            "basesaves/red/juggler1.gqs",
+            "basesaves/red/hypno.gqs",
+            "basesaves/red/koga.gqs"
+            };
+        RedSimulation2.ActionCallback[] actions =
+            new RedSimulation2.ActionCallback[] {
+                a.Arbok,
+                a.SilphRival,
+                a.CuboneRocket,
+                a.SilphGio,
+                a.Juggler1,
+                a.Hypno,
+                a.Koga
+            };
 
-        RedSimulation2.ActionCallback[] actions2 = new RedSimulation2.ActionCallback[] {
-                                                                                       a.ArbokThrash,
-                                                                                       a.SilphRivalNormal,
-                                                                                       a.CuboneRocketNormal,
-                                                                                       a.SilphGio,
-                                                                                       a.Juggler1,
-                                                                                       a.Hypno,
-                                                                                       a.Koga
-                                                                                       };
+        RedSimulation2.ActionCallback[] actions2 =
+            new RedSimulation2.ActionCallback[] {
+                a.ArbokThrash,
+                a.SilphRivalNormal,
+                a.CuboneRocketNormal,
+                a.SilphGio,
+                a.Juggler1,
+                a.Hypno,
+                a.Koga
+            };
 
         a.Simulate("simulation/red/silphbar/nosilphbar", 16, 25000, initialStates, actions2);
     }
@@ -85,10 +110,10 @@ class Program {
     //     // gbs[0].Record("test");
     //     int numSims = 10000;
 
-    //     GscKaren a;
+    //     GscSimulation a;
     //     for(ushort i = 52; i < 73; i++) {
-    //         a = new GscKaren(i);
-    //         a.Simulate($"Simulation/crystal/karen/xacc_{i}", gbs, numSims, "basesaves/crystal/karen_xacc.gqs", a.xacclowhp);
+    //         a = new GscSimulation(i);
+    //         a.Simulate($"Simulation/crystal/karen/xacc_{i}", 16, numSims, "basesaves/crystal/karen_xacc.gqs", a.xacclowhp);
     //         // a.Simulate($"Simulation/crystal/karen/noxacc_{i}", gbs, numSims, "basesaves/crystal/karen_noxacc.gqs", a.noxacc);
     //     }
 
