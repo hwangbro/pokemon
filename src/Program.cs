@@ -75,4 +75,28 @@ class Program {
         gb.AdvanceFrames(1000);
         gb.Dispose();
     }
+
+    // public static void runSimulation() {
+    //     const int gbCount = 16;
+    //     Crystal[] gbs = new Crystal[gbCount];
+    //     for(int i = 0; i < gbCount; i++) {
+    //         gbs[i] = new Crystal(true);
+    //     }
+    //     // gbs[0].Record("test");
+    //     int numSims = 10000;
+
+    //     GscKaren a;
+    //     for(ushort i = 52; i < 73; i++) {
+    //         a = new GscKaren(i);
+    //         a.Simulate($"Simulation/crystal/karen/xacc_{i}", gbs, numSims, "basesaves/crystal/karen_xacc.gqs", a.xacclowhp);
+    //         // a.Simulate($"Simulation/crystal/karen/noxacc_{i}", gbs, numSims, "basesaves/crystal/karen_noxacc.gqs", a.noxacc);
+    //     }
+
+    //     // for(ushort i = 93; i < 170; i++) {
+    //     //     a = new GscKaren(i);
+    //     //     a.Simulate($"Simulation/crystal/karen/xacc_{i}", gbs, numSims, "basesaves/crystal/karen_xacc.gqs", a.xacc);
+    //     // }
+
+    //     // gbs[0].Dispose();
+    // }
 }

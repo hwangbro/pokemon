@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 public partial class Gsc {
 
@@ -124,6 +125,111 @@ public partial class Gsc {
                 }
             }
         }
+    }
+
+    public void Swap(int targetPokeIndex, bool dead = false) {
+        int curSlot = Math.Max(CpuRead("wPartyMenuCursor"), (byte) 1);
+        Joypad joypad = targetPokeIndex > curSlot ? Joypad.Down : Joypad.Up;
+        int numScrolls = Math.Abs(curSlot - targetPokeIndex);
+
+        if(!dead) {
+            OpenPkmnMenu();
+            Hold(joypad, "InitPartyMenuWithCancel");
+        }
+
+        RunUntil("GetJoypad");
+
+        for(int i = 0; i < numScrolls; i++) {
+            ScrollBag(joypad);
+        }
+        Press(Joypad.A, Joypad.None, Joypad.A);
+    }
+
+    public void UseMove(int slot, int numMoves = 4) {
+        OpenFightMenu();
+        int currentSlot = CpuRead("wCurMoveNum") + 1;
+        int difference = currentSlot - slot;
+        int numSlots = difference == 0 ? 0 : slot % 2 == currentSlot % 2 ? (int)(numMoves/2) : 1;
+        Joypad joypad = (((Math.Abs(difference * numMoves) + difference) % numMoves) & 2) != 0 ? Joypad.Down : Joypad.Up;
+        switch(numSlots) {
+            case 0: Press(Joypad.None); break;
+            case 1: Press(joypad); break;
+            case 2: Press(joypad, Joypad.None, joypad); break;
+            default: Press(Joypad.None); break;
+        }
+        Press(Joypad.A);
+    }
+
+    public void UseItem(string name, int targetPokeIndex = -1) {
+        Dictionary<string, byte> bag = GetBag();
+        if(!bag.ContainsKey(name)) {
+            throw new Exception($"Item {name} does not exist in bag");
+        }
+        ScrollToItem(bag[name]);
+        Press(Joypad.A, Joypad.None, Joypad.A);
+
+        if(targetPokeIndex != -1) {
+            RunUntil("InitPartyMenuWithCancel");
+            AdvanceFrame();
+            RunUntil("GetJoypad");
+            AdvanceFrame();
+            RunUntil("GetJoypad");
+            Press(Joypad.A);
+        }
+    }
+
+    public void ScrollToItem(int slot) {
+        int curBagPos = Math.Max(CpuRead("wItemsPocketCursor"), (byte) 1);
+        int curScreenScroll = CpuRead("wItemsPocketScrollPosition");
+        int curSlot = curBagPos + curScreenScroll;
+        Joypad joypad = slot > curSlot ? Joypad.Down : Joypad.Up;
+        int numScrolls = Math.Abs(curSlot - slot);
+
+        OpenItemBag();
+        Hold(joypad, "ScrollingMenu");
+        RunUntil("GetJoypad");
+
+        for(int i = 0; i < numScrolls; i++) {
+            ScrollBag(joypad);
+        }
+    }
+
+    public Dictionary<string, byte> GetBag() {
+        Dictionary<string, byte> bag = new Dictionary<string, byte>();
+
+        int addr = SYM["wItems"];
+        byte index = 1;
+        while(CpuRead(addr) != 0xFF) {
+            GscItem item = Items[CpuRead(addr++) - 1];
+            byte quantity = CpuRead(addr++);
+            bag[item.Name] = index++;
+        }
+
+        return bag;
+    }
+
+    public void ScrollBag(Joypad joypad) {
+        Hold(joypad, "GetJoypad");
+        MenuPress(joypad);
+        AdvanceFrame();
+    }
+
+    public void OpenFightMenu() {
+        if(CpuRead("wMenuCursorY") == 2) Press(Joypad.Up);
+        if(CpuRead("wMenuCursorX") == 2) Press(Joypad.Left);
+        Press(Joypad.A);
+    }
+
+    public void OpenPkmnMenu() {
+        if(CpuRead("wMenuCursorY") == 2) Press(Joypad.Up);
+        if(CpuRead("wMenuCursorX") == 1) Press(Joypad.Right);
+        Press(Joypad.A);
+    }
+
+    public void OpenItemBag() {
+        if(CpuRead("wMenuCursorY") == 1) Press(Joypad.Down);
+        if(CpuRead("wMenuCursorX") == 2) Press(Joypad.Left);
+        Press(Joypad.A);
     }
 
     public override int WalkTo(int targetX, int targetY) {

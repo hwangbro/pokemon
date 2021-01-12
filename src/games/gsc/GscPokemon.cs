@@ -95,6 +95,7 @@ public class GscPokemon {
     public bool Safeguarded { get { return (Screens & 0x04) > 0; } }
     public bool LightScreenActive { get { return (Screens & 0x08) > 0; } }
     public bool ReflectActive { get { return (Screens & 0x10) > 0; } }
+    public string Name { get { return Species.Name; } }
 
     public Gender Gender {
         get {
