@@ -8,8 +8,10 @@ public class GscItem : ROMObject {
         Game = game;
         Name = game.Charmap.Decode(name.Until(Charmap.Terminator));
         Id = id;
-        ExecutionPointer = 0x3 << 16 | game.ROM.u16le(game.SYM["ItemEffects"] + (byte) id * 2);
-        if(game.SYM.Contains(ExecutionPointer)) ExecutionPointerLabel = game.SYM[ExecutionPointer];
+        if(id <= 179) {
+            ExecutionPointer = 0x3 << 16 | game.ROM.u16le(game.SYM["ItemEffects"] + (byte) id * 2);
+            if(game.SYM.Contains(ExecutionPointer)) ExecutionPointerLabel = game.SYM[ExecutionPointer];
+        }
     }
 }
 
