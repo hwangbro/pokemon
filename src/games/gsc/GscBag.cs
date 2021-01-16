@@ -2,7 +2,14 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-public class GscBag : IEnumerable<GscItemStack> {
+public class GscBag {
+    public GscPocket Items;
+    public GscPocket Balls;
+    public GscPocket KeyItems;
+    public GscPocket TmsHms;
+}
+
+public class GscPocket : IEnumerable<GscItemStack> {
     public Gsc Game;
     public GscItemStack[] Items;
     public int NumItems;

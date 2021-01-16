@@ -3,7 +3,7 @@
 
 class Program {
     static void Main(string[] args) {
-
+        CrystalTest();
     }
 
     public static void CrystalTest() {
@@ -12,18 +12,11 @@ class Program {
         gb.Record("test");
         gb.RunUntil("PlayCry");
         gb.RunUntil("GetJoypad");
-        gb.UseItem("X ACCURACY");
-        gb.ClearText(false);
-        gb.UseMove3();
-        gb.ClearText(false);
-        gb.UseItem("FULL RESTORE");
-        gb.ClearText(false);
-        gb.Swap(4);
-        gb.ClearText(false);
-        gb.UseMove1();
-        gb.ClearText(false);
-        gb.Swap(1);
-        gb.ClearText(false);
+        GscBag bag = gb.Bag;
+        if(gb.CpuRead("wMenuCursorX") != 0x1) gb.MenuPress(Joypad.Left);
+        gb.SelectMenuItem(2);
+        gb.SwitchPocket(3);
+        gb.AdvanceFrames(100);
         gb.Dispose();
     }
 

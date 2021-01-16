@@ -17,7 +17,7 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
     public bool xacc(Crystal gb, Dictionary<string, object> memory) {
         GscPokemon enemyMon = gb.EnemyMon;
         GscPokemon battleMon = gb.BattleMon;
-        GscBag bag = gb.ItemBag;
+        GscPocket bag = gb.Bag.Items;
 
         // 93 - 169
 
@@ -34,17 +34,17 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
                     gb.UseItem("FULL RESTORE", 1);
                 }
             } else {
-                gb.UseMove4();
+                gb.UseMove(4);
             }
         } else if(enemyMon.Species.Name == "VILEPLUME") {
-            gb.UseMove4();
+            gb.UseMove(4);
         } else if(enemyMon.Species.Name == "MURKROW") {
-            gb.UseMove2();
+            gb.UseMove(2);
         } else {
-            gb.UseMove1();
+            gb.UseMove(1);
         }
 
-        gb.ClearText(false);
+        gb.ClearText();
 
         return true;
     }
@@ -52,7 +52,7 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
     public bool xacclowhp(Crystal gb, Dictionary<string, object> memory) {
         GscPokemon enemyMon = gb.EnemyMon;
         GscPokemon battleMon = gb.BattleMon;
-        GscBag bag = gb.ItemBag;
+        GscPocket bag = gb.Bag.Items;
 
         // 52-92
         List<string> sparkPokemon = new List<string> {"HOUNDOOM", "GENGAR"};
@@ -60,7 +60,7 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
         if(enemyMon.Species.Name == "UMBREON") {
             memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
             if(enemyMon.HP == enemyMon.MaxHP) {
-                gb.UseMove1();
+                gb.UseMove(1);
             } else if(battleMon.SpecialAttackModifider != 9) {
                 if(battleMon.HP < 18) {
                     gb.UseItem("FULL RESTORE", 1);
@@ -76,21 +76,21 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
                     gb.UseItem("FULL RESTORE", 1);
                 }
             } else {
-                gb.UseMove1();
+                gb.UseMove(1);
             }
         } else if(sparkPokemon.Contains(enemyMon.Species.Name)) {
-            gb.UseMove1();
+            gb.UseMove(1);
         } else if(enemyMon.Species.Name == "VILEPLUME") {
-            gb.UseMove4();
+            gb.UseMove(4);
         } else if(enemyMon.Species.Name == "MURKROW") {
             if(battleMon.HP < 12) {
                 gb.UseItem("FULL RESTORE", 1);
             } else {
-                gb.UseMove2();
+                gb.UseMove(2);
             }
         }
 
-        gb.ClearText(false);
+        gb.ClearText();
 
         return true;
     }
@@ -109,24 +109,24 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
 
         GscPokemon enemyMon = gb.EnemyMon;
         GscPokemon battleMon = gb.BattleMon;
-        GscBag bag = gb.ItemBag;
+        GscPocket bag = gb.Bag.Items;
 
         if(battleMon.Species.Name == "SPEAROW") {
             memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
-            gb.UseMove2();
-            gb.ClearText(false);
+            gb.UseMove(2);
+            gb.ClearText();
             if(gb.BattleMon.HP == 0) {
                 gb.Swap(1);
-                gb.ClearText(false);
+                gb.ClearText();
             }
         } else if(enemyMon.Name == "UMBREON") {
             memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
             if(enemyMon.HP == enemyMon.MaxHP) {
-                gb.UseMove1();
+                gb.UseMove(1);
             } else if(battleMon.SpecialAttackModifider == 7 && battleMon.AccuracyModifider != 7) {
                 memory["kenyaSwap"] = true;
                 gb.Swap(2);
-                gb.ClearText(false);
+                gb.ClearText();
                 if(gb.BattleMon.HP == 0) {
                     memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
                     gb.Swap(1);
@@ -134,7 +134,7 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
             } else if(battleMon.HP < 18) {
                 if(battleMon.SpecialAttackModifider == 9 && battleMon.AccuracyModifider == 7) {
                     if(battleMon.PP[0] == 0) return false;
-                    gb.UseMove1();
+                    gb.UseMove(1);
                 } else {
                     gb.UseItem("FULL RESTORE", 1);
                 }
@@ -150,25 +150,25 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
                 if(battleMon.PP[0] == 0) {
                     return false;
                 }
-                gb.UseMove1();
+                gb.UseMove(1);
             }
         } else if(enemyMon.Name == "VILEPLUME") {
             if(battleMon.PP[3] < 3) return false;
-            gb.UseMove4();
+            gb.UseMove(4);
         } else if(enemyMon.Name == "GENGAR") {
             if(battleMon.AccuracyModifider != 7) {
                 if(battleMon.PP[3] > 3) {
-                    gb.UseMove4();
+                    gb.UseMove(4);
                 } else {
                     if(battleMon.PP[0] <= 2) {
                         if(battleMon.PP[1] == 0) return false;
-                        gb.UseMove2();
+                        gb.UseMove(2);
                     } else {
-                        gb.UseMove1();
+                        gb.UseMove(1);
                     }
                 }
             } else {
-                gb.UseMove1();
+                gb.UseMove(1);
             }
         } else if(enemyMon.Name == "HOUNDOOM") { //43-51
             // if 2 sparks/3 hp, double str houndoom
@@ -178,15 +178,15 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
                         gb.UseItem("FULL RESTORE", 1);
                     } else if(battleMon.PP[2] == 0) {
                         if(battleMon.PP[1] == 0) return false;
-                        gb.UseMove2();
+                        gb.UseMove(2);
                     } else {
-                        gb.UseMove3();
+                        gb.UseMove(3);
                     }
                 } else {
-                    gb.UseMove1();
+                    gb.UseMove(1);
                 }
             } else {
-                gb.UseMove1();
+                gb.UseMove(1);
             }
         } else if(enemyMon.Name == "MURKROW") {
             // if(enemyMon.HP == 0) return true;
@@ -194,11 +194,11 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
                 gb.UseItem("FULL RESTORE", 1);
             } else {
                 if(battleMon.PP[1] == 0) return false;
-                gb.UseMove2();
+                gb.UseMove(2);
             }
         }
 
-        gb.ClearText(false);
+        gb.ClearText();
 
         return true;
     }
