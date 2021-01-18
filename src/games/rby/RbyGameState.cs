@@ -71,10 +71,10 @@ public partial class Rby {
             RbyBag bag = new RbyBag();
             bag.Game = this;
             bag.NumItems = CpuRead("wNumBagItems");
-            bag.Items = new RbyItemStack[bag.NumItems];
+            bag.Items = new ItemStack[bag.NumItems];
             RAMStream data = From("wBagItems");
             for(int i = 0; i < bag.Items.Length; i++) {
-                bag.Items[i] = new RbyItemStack(Items[data.u8()], data.u8());
+                bag.Items[i] = new ItemStack(Items[data.u8()], data.u8());
             }
             return bag;
         }

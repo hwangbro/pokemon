@@ -2,9 +2,10 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 
-public class RbyBag : IEnumerable<RbyItemStack> {
+public class RbyBag : IEnumerable<ItemStack> {
+
     public Rby Game;
-    public RbyItemStack[] Items;
+    public ItemStack[] Items;
     public int NumItems;
 
     public int IndexOf(string name) {
@@ -29,22 +30,22 @@ public class RbyBag : IEnumerable<RbyItemStack> {
         return IndexOf(item) != -1;
     }
 
-    public RbyItemStack this[int index] {
+    public ItemStack this[int index] {
         get { return Items[index]; }
         set { Items[index] = value; }
     }
 
-    public RbyItemStack this[RbyItem item] {
+    public ItemStack this[RbyItem item] {
         get { return Items[IndexOf(item)]; }
         set { Items[IndexOf(item)] = value; }
     }
 
-    public RbyItemStack this[string name] {
+    public ItemStack this[string name] {
         get { return Items[IndexOf(Game.Items[name])]; }
         set { Items[IndexOf(Game.Items[name])] = value; }
     }
 
-    public IEnumerator<RbyItemStack> GetEnumerator() {
+    public IEnumerator<ItemStack> GetEnumerator() {
         foreach(var item in Items) {
             if(item != null) yield return item;
         }

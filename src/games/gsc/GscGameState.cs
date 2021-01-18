@@ -70,7 +70,7 @@ public partial class Gsc {
 
             RAMStream data = From("wTMsHMs");
             int cursorIndex = 0;
-            bag.TmsHms.Items = new GscItemStack[57];
+            bag.TmsHms.Items = new ItemStack[57];
             for(byte i = 0; i < bag.TmsHms.Items.Length; i++) {
                 byte count = data.u8();
                 byte id = i;
@@ -78,29 +78,29 @@ public partial class Gsc {
                 if(id >= 29) id++;
 
                 if(count > 0) {
-                    bag.TmsHms.Items[cursorIndex++] = new GscItemStack(Items[id + 190], count);
+                    bag.TmsHms.Items[cursorIndex++] = new ItemStack(Items[id + 190], count);
                 }
             }
             bag.TmsHms.NumItems = cursorIndex;
 
             bag.Items.NumItems = data.u8();
-            bag.Items.Items = new GscItemStack[bag.Items.NumItems];
+            bag.Items.Items = new ItemStack[bag.Items.NumItems];
             for(byte i = 0; i < bag.Items.NumItems; i++) {
-                bag.Items.Items[i] = new GscItemStack(Items[data.u8() - 1], data.u8());
+                bag.Items.Items[i] = new ItemStack(Items[data.u8() - 1], data.u8());
             }
             data.Seek((20 - bag.Items.NumItems) * 2 + 1);
 
             bag.KeyItems.NumItems = data.u8();
-            bag.KeyItems.Items = new GscItemStack[bag.KeyItems.NumItems];
+            bag.KeyItems.Items = new ItemStack[bag.KeyItems.NumItems];
             for(byte i = 0; i < bag.KeyItems.NumItems; i++) {
-                bag.KeyItems.Items[i] = new GscItemStack(Items[data.u8() - 1], 1);
+                bag.KeyItems.Items[i] = new ItemStack(Items[data.u8() - 1], 1);
             }
             data.Seek((25 - bag.KeyItems.NumItems) + 1);
 
             bag.Balls.NumItems = data.u8();
-            bag.Balls.Items = new GscItemStack[bag.Balls.NumItems];
+            bag.Balls.Items = new ItemStack[bag.Balls.NumItems];
             for(byte i = 0; i < bag.Balls.NumItems; i++) {
-                bag.Balls.Items[i] = new GscItemStack(Items[data.u8() - 1], data.u8());
+                bag.Balls.Items[i] = new ItemStack(Items[data.u8() - 1], data.u8());
             }
 
             return bag;
