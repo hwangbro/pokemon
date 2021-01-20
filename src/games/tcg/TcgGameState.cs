@@ -5,60 +5,14 @@ using System.Linq;
 public partial class Tcg {
 
     public TcgDuelDeck MyDeck {
-        get { return ReadDuelDeck(From("wPlayerDeck"), From("wPlayerPrizeCards"), CpuRead("wPlayerNumberOfCardsNotInDeck"), CpuRead("wPlayerNumberOfCardsInHand"), CpuRead("wPlayerNumberOfPokemonInPlayArea")); }
+        get { return ReadDuelDeck(From("wPlayerDeck"), From("wPlayerCardLocations"), CpuRead("wPlayerNumberOfCardsNotInDeck"), CpuRead("wPlayerNumberOfCardsInHand"), CpuRead("wPlayerNumberOfPokemonInPlayArea")); }
     }
 
     public TcgDuelDeck OppDeck {
-        get { return ReadDuelDeck(From("wOpponentDeck"), From("wOpponentPrizeCards"), CpuRead("wOpponentNumberOfCardsNotInDeck"), CpuRead("wOpponentNumberOfCardsInHand"), CpuRead("wOpponentNumberOfPokemonInPlayArea")); }
+        get { return ReadDuelDeck(From("wOpponentDeck"), From("wOpponentCardLocations"), CpuRead("wOpponentNumberOfCardsNotInDeck"), CpuRead("wOpponentNumberOfCardsInHand"), CpuRead("wOpponentNumberOfPokemonInPlayArea")); }
     }
 
-    public List<TcgBattleCard> GetBattleCards(bool enemy = false) {
-        string baseName = enemy ? "wOpponent" : "wPlayer";
-        TcgDuelDeck deck = enemy ? OppDeck : MyDeck;
-        RAMStream cardLocations = From(baseName + "CardLocations");
-
-        List<TcgBattleCard> cards = new List<TcgBattleCard>();
-
-        byte battleCards = CpuRead(baseName + "NumberOfPokemonInPlayArea");
-        for(int i = 0; i < battleCards; i++) {
-            TcgBattleCard card = new TcgBattleCard();
-            string cur = baseName;
-            if(i == 0) {
-                cur += "ArenaCard";
-                card.Status = (TcgDuelStatus) CpuRead(cur + "Status");
-                card.Substatus1 = CpuRead(cur + "Substatus1");
-                card.Substatus2 = CpuRead(cur + "Substatus2");
-                card.Substatus3 = CpuRead(cur + "Substatus3");
-            } else {
-                cur += "Bench" + battleCards.ToString() + "Card";
-            }
-
-            card.Flags = CpuRead(SYM[baseName + "ArenaCardFlags"] + i);
-
-            card.CurHP = CpuRead(cur + "HP");
-            card.Pluspower = CpuRead(cur + "AttachedPluspower");
-            card.Defender = CpuRead(cur + "AttachedDefender");
-
-            card.Energies = new List<TcgType>();
-            cards.Add(card);
-        }
-
-        for(int i = 0; i < 60; i++) {
-            TcgCard card = deck.Cards[i];
-            byte location = cardLocations.u8();
-            if(location >= 0x10 && location <= 0x10 + cards.Count) {
-                if(card.IsEnergy) {
-                    cards[location - 0x10].Energies.Add(card.Type);
-                } else if(card is TcgPkmnCard) {
-                    cards[location - 0x10].Card = (TcgPkmnCard) card;
-                }
-            }
-        }
-
-        return cards;
-    }
-
-    private TcgDuelDeck ReadDuelDeck(RAMStream cardList, RAMStream data, byte cardsNotInDeck, byte cardsInHand, byte cardsInBench) {
+    private TcgDuelDeck ReadDuelDeck(RAMStream cardList, RAMStream data, byte numCardsNotInDeck, byte numCardsInHand, byte numArenaCards) {
         TcgDuelDeck deck = new TcgDuelDeck();
         deck.Cards = new List<TcgCard>();
         deck.Hand = new List<TcgCard>();
@@ -66,11 +20,19 @@ public partial class Tcg {
         deck.Deck = new List<TcgCard>();
         deck.Bench = new List<TcgPkmnCard>();
 
+        List<byte> locations = new List<byte>();
+
         // Base index 0-59 for cards in deck, stores card ids
         for(int i = 0; i < 60; i++) {
             deck.Cards.Add(Cards[cardList.u8()]);
         }
 
+        // card locations
+        for(int i = 0; i < 60; i++) {
+            locations.Add(data.u8());
+        }
+
+        // prizes
         for(int i = 0; i < 6; i++) {
             if(i < CpuRead("wDuelInitialPrizes")) {
                 deck.Prizes.Add(deck.Cards[data.u8()]);
@@ -79,8 +41,9 @@ public partial class Tcg {
             }
         }
 
+        // hand
         for(int i = 0; i < 60; i++) {
-            if(i < cardsInHand) {
+            if(i < numCardsInHand) {
                 deck.Hand.Add(deck.Cards[data.u8()]);
             } else {
                 data.Seek(1);
@@ -88,9 +51,10 @@ public partial class Tcg {
         }
         deck.Hand.Reverse();
 
+        // deckcards
         for(int i = 0; i < 60; i++) {
             // prizes are not assigned at the start of the duel, so they should not be in the initial "deck"
-            if(i < cardsNotInDeck + CpuRead("wDuelInitialPrizes")) {
+            if(i < numCardsNotInDeck + CpuRead("wDuelInitialPrizes")) {
                 data.Seek(1);
             } else {
                 deck.Deck.Add(deck.Cards[data.u8()]);
@@ -98,14 +62,86 @@ public partial class Tcg {
         }
         data.Seek(1); // wPlayerNumberOfCardsNotInDeck
 
-        if(cardsInBench != 0) {
-            deck.Active = (TcgPkmnCard) deck.Cards[data.u8()];
+        // arenacard + bench
+        if(numArenaCards != 0) {
+            deck.ActiveCard = (TcgPkmnCard) deck.Cards[data.u8()];
 
-            int benchCount = Math.Max(0, cardsInBench - 1);
-            for(int i = 0; i < benchCount; i++) {
-                deck.Bench.Add((TcgPkmnCard) deck.Cards[data.u8()]);
+            int benchCount = Math.Max(0, numArenaCards - 1);
+            for(int i = 0; i < 5; i++) {
+                if(i < benchCount) {
+                    deck.Bench.Add((TcgPkmnCard) deck.Cards[data.u8()]);
+                } else {
+                    data.Seek(1);
+                }
+
             }
         }
+        data.Seek(1);
+
+        // parse arena card data
+        List<TcgBattleCard> arenaCards = new List<TcgBattleCard>();
+        for(int i = 0; i < numArenaCards; i++) {
+            arenaCards.Add(new TcgBattleCard());
+            arenaCards[i].Energies = new List<TcgType>();
+        }
+
+        for(int i = 0; i < 6; i++) {
+            if(i < arenaCards.Count) {
+                arenaCards[i].Flags = data.u8();
+            } else {
+                data.Seek(1);
+            }
+        }
+
+        for(int i = 0; i < 6; i++) {
+            if(i < arenaCards.Count) {
+                arenaCards[i].CurHP = data.u8();
+            } else {
+                data.Seek(1);
+            }
+        }
+        data.Seek(6); // cardstage
+        data.Seek(6); // changedtype
+
+        for(int i = 0; i < 6; i++) {
+            if(i < arenaCards.Count) {
+                arenaCards[i].Defender = data.u8();
+            } else {
+                data.Seek(1);
+            }
+        }
+
+        for(int i = 0; i < 6; i++) {
+            if(i < arenaCards.Count) {
+                arenaCards[i].Pluspower = data.u8();
+            } else {
+                data.Seek(1);
+            }
+        }
+        data.Seek(1);
+
+        if(arenaCards.Count > 0) {
+            arenaCards[0].Substatus1 = data.u8();
+            arenaCards[0].Substatus2 = data.u8();
+            data.Seek(2); // changed weakness, changed resistance
+            arenaCards[0].Substatus3 = data.u8();
+            data.Seek(4);
+            arenaCards[0].Status = (TcgDuelStatus) data.u8();
+        }
+
+        for(int i = 0; i < 60; i++) {
+            TcgCard card = deck.Cards[i];
+            byte location = locations[i];
+            if(location >= 0x10 && location <= 0x10 + arenaCards.Count) {
+                if(card.IsEnergy) {
+                    arenaCards[location - 0x10].Energies.Add(card.Type);
+                } else if(card is TcgPkmnCard) {
+                    arenaCards[location - 0x10].Card = (TcgPkmnCard) card;
+                }
+            }
+        }
+
+        deck.ArenaCards = arenaCards;
         return deck;
     }
 

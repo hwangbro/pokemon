@@ -16,8 +16,15 @@ public static class Jennifer {
         Tcg gb = new Tcg(false, "basesaves/tcg/jennifer.sav");
         gb.Record("test");
 
+        Dictionary<int, List<int>> streaks = new Dictionary<int, List<int>>();
+        int wins = 0;
+        int totalWinTurns = 0;
+        bool prevResult = false;
+        int index = 0;
+        int numDuels = 200;
+
         byte[] state = gb.SaveState();
-        for(int i = 0; i < 1; i++) {
+        for(int i = 0; i < numDuels; i++) {
             gb.LoadState(state);
             gb.ClearIntro();
 
@@ -33,21 +40,40 @@ public static class Jennifer {
             // clear text box
             gb.RunUntil("WaitForButtonAorB");
             // add delay frames here
-            gb.AdvanceFrames(45);
+            gb.AdvanceFrames(72+3);
             gb.Press(Joypad.A);
             gb.RunUntil("WaitForButtonAorB");
-            gb.SaveState("test3.gqs");
+            // gb.SaveState("test3.gqs");
             byte rng = gb.CpuRead("wRNGCounter");
             Console.WriteLine("{0:X2}{1:X2}, {2:X2}", gb.CpuRead("wRNG1"), gb.CpuRead("wRNG2"), gb.CpuRead("wRNGCounter"));
 
             gb.ClearText();
-            gb.PlayBasics(true);
+            // gb.MyDeck.SortHand();
+            gb.PlayBasics(true, gb.PredictOppActive());
             gb.MenuInput(Joypad.B);
             gb.ClearText();
 
             while(!gb.DoTurn()) {
 
             }
+            bool won = gb.CpuRead("wDuelFinished") == 1 && gb.CpuRead("wWhoseTurn") == 0xc2;
+            Console.WriteLine(i);
+            Console.WriteLine("Duel: {0} turns, {1}", gb.CpuRead("wDuelTurns") / 2, won ? "won" : "lost");
+            Console.WriteLine("Duel Result: {0}", won);
+
+            int turns = gb.CpuRead("wDuelTurns") / 2;
+            if(won) {
+                wins++;
+                totalWinTurns += turns;
+                if(prevResult) {
+                    streaks[index].Add(turns);
+                } else {
+                    index = i;
+                    streaks[index] = new List<int>();
+                    streaks[index].Add(turns);
+                }
+            }
+            prevResult = won;
 
             // TcgDuelDeck myDeck = gb.MyDeck;
             // TcgDuelDeck oppDeck = gb.OppDeck;
@@ -67,7 +93,7 @@ public static class Jennifer {
 
             gb.AdvanceFrames(100);
         }
-
+        Console.WriteLine("Total wins: {0}/{1}, avg win turns: {2}", wins, numDuels, totalWinTurns/wins);
         gb.Dispose();
     }
 

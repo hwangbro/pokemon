@@ -168,6 +168,7 @@ public partial class Tcg {
         RunUntil("HandleMenuInput");
         Press(Joypad.A);
         if(cardSlot != -1) {
+            ClearText();
             RunUntil("HandleMenuInput");
             MenuScroll(cardSlot);
             Press(Joypad.A);
@@ -205,8 +206,8 @@ public partial class Tcg {
             InjectDPadRepeat(Joypad.Up);
             AdvanceFrame();
         }
-        int numScrolls = Math.Abs(curSlot - slot) / 2;
-        Joypad direction = curSlot > slot ? Joypad.Left : Joypad.Right;
+        int numScrolls = curSlot / 2 == slot / 2 ? 0 : 1;
+        Joypad direction = ((curSlot > slot) && (curSlot / 2 == 1)) || ((curSlot < slot) && (curSlot / 2 == 0)) ? Joypad.Left : Joypad.Right;
 
         if(numScrolls > 1) {
             numScrolls = 1;
@@ -229,9 +230,9 @@ public partial class Tcg {
         RunUntil("HandlePlayerMoveModeInput");
     }
 
-    public bool EquipNeededEnergy(byte slot) {
+    public bool EquipNeededEnergy(byte slot, TcgBattleCard opp) {
         TcgDuelDeck myDeck = MyDeck;
-        TcgBattleCard card = GetBattleCards()[slot];
+        TcgBattleCard card = myDeck.SortedArenaCards(opp)[slot];
 
         for(byte i = 0; i < 2; i++) {
             List<TcgType> remainingCost = card.CanUseMove(i);
@@ -239,7 +240,7 @@ public partial class Tcg {
                 TcgCard energyCard;
                 if(energy == TcgType.DoubleColorless_E) {
                     // try using preferred type for ** energies
-                    energyCard = myDeck.Hand.FirstOrDefault(item => item.Type.ToString().Contains(card.Card.Type.ToString()));
+                    energyCard = myDeck.Hand.FirstOrDefault(item => item.Type.ToString().Contains(card.Card.Type.ToString()) && item.IsEnergy);
                     if(energyCard == null) {
                         energyCard = myDeck.Hand.FirstOrDefault(item => energy == TcgType.DoubleColorless_E && item.IsEnergy);
                     }
@@ -251,7 +252,7 @@ public partial class Tcg {
                     continue;
                 }
 
-                UseHandCard((byte) myDeck.Hand.IndexOf(energyCard), slot);
+                UseHandCard((byte) myDeck.Hand.IndexOf(energyCard), myDeck.ArenaCards.IndexOf(card));
                 return true;
             }
         }
@@ -261,8 +262,8 @@ public partial class Tcg {
 
     public bool UseBestMove() {
         byte damage = 0;
-        TcgBattleCard active = GetBattleCards()[0];
-        TcgBattleCard oppActive = GetBattleCards(true)[0];
+        TcgBattleCard active = MyDeck.ArenaCards[0];
+        TcgBattleCard oppActive = OppDeck.ArenaCards[0];
         int moveSlot = -1;
         bool discard = false;
         for(byte i = 0; i < 2; i++) {
@@ -290,41 +291,66 @@ public partial class Tcg {
     // move to execution
     // returns false if duel is finished
     public bool DoTurn() {
-        TcgBattleCard active = GetBattleCards()[0];
+        TcgBattleCard active = MyDeck.Active;
+        TcgBattleCard oppActive = OppDeck.Active;
+
         if(MyDeck.Hand.Contains(TrainerCards["Bill"])) {
             UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Bill"]));
             ClearText();
         }
         if(MyDeck.Hand.Contains(TrainerCards["Potion"]) && CpuRead("wPlayerArenaCardHP") != active.CurHP) {
             UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Potion"]), 0);
-            active = GetBattleCards()[0];
+            active = MyDeck.Active;
             ClearText();
         }
+        // if(MyDeck.Hand.Contains(TrainerCards["Poké Ball"]) && PredictCoinFlip()) {
+        //     // 121 diglett, 122 dugtrio
+        //     if(MyDeck.GetActives().Contains(Cards[121]) && !MyDeck.Hand.Contains(Cards[122]) && MyDeck.Deck.Contains(Cards[122])) {
+        //         // i have a diglett in play and no dugtrio in hand
+        //         UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Poké Ball"]));
+        //     }
+        // }
+        if(MyDeck.Hand.Contains(TrainerCards["Computer Search"])) {
+            // computer search scenarios
+            // 1: look for dugtrio if i have diglett
+            // 2: look for pluspower if you can finish active pokemon
+            // 3: look for full heal
+            // 4: look for energy?
+
+            // use case
+            // check for search scenario
+            //   if it fits, use comp search, then take first indices of sorted hand and discard
+            //   then search deck for chosen card
+
+        }
+
+        // implement retreat if current card sucks
+        // implement switch and retreat if status'd/smokescreen/leer/etc
+
 
         /*
         TODO
             implement computer search
                 needs to have some sort of ranking of hand cards to know which are okay to discard
                 basic example: discard random energies, random basics/evo cards?
-            implement oak
-                needs to know what situation to use oak
-            implement pokeballs
             implement switch/retreat strats
-            implement pluspower/defender
+            implement defender
         */
 
         // try evolving
-        EvolveCards();
+        if(EvolveCards()) {
+            active = MyDeck.Active;
+        }
 
         if(active.Status != TcgDuelStatus.None && MyDeck.Hand.Contains(TrainerCards["Full Heal"])) {
             UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Full Heal"]));
             ClearText();
-            active = GetBattleCards()[0];
+            active = MyDeck.Active;
         }
 
         // play every basic in our hand
         //    maybe not every?
-        PlayBasics(false);
+        PlayBasics(false, oppActive.Card);
 
         // equip energy
         // prioritize stronger cards?
@@ -332,12 +358,43 @@ public partial class Tcg {
             if(CpuRead("wAlreadyPlayedEnergy") == 1) {
                 break;
             }
-            EquipNeededEnergy(i);
+            EquipNeededEnergy(i, oppActive);
+        }
+
+        int retreatIdx = MyDeck.GetLowestBenchRetreat();
+        if(active.Status != TcgDuelStatus.None && MyDeck.Hand.Contains(TrainerCards["Switch"]) && retreatIdx != -1) {
+            UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Switch"]), retreatIdx - 1);
+            Retreat((byte) retreatIdx);
+            active = MyDeck.Active;
+        }
+
+        // consider swapping
+        byte bestIdx = MyDeck.GetBestArena(oppActive).Key;
+        if(active.CanRetreat && bestIdx != 0 && MyDeck.ArenaCards[bestIdx].CanAttack) {
+            Retreat(bestIdx);
+            active = MyDeck.Active;
+        }
+
+        // pluspower
+        if(MyDeck.Hand.Contains(TrainerCards["PlusPower"])) {
+            bool usePP = false;
+            for(byte i = 0; i < 2; i++) {
+                byte dmg = active.CalculateDamage(oppActive, i);
+                if(dmg == oppActive.CurHP - 10) {
+                    usePP = true;
+                } else if(dmg >= oppActive.CurHP) {
+                    usePP = false;
+                }
+            }
+            if(usePP) {
+                UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["PlusPower"]));
+                ClearText();
+            }
         }
         if(CpuRead("wAlreadyPlayedEnergy") == 0 && MyDeck.Hand.Contains(TrainerCards["Professor Oak"])) {
             UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Professor Oak"]));
             ClearText();
-            DoTurn();
+            return DoTurn();
         }
 
         // always try to attack
@@ -346,7 +403,7 @@ public partial class Tcg {
         // if confused, don't attack if next coin flip is tails
         if(active.Status == TcgDuelStatus.Paralyzed) {
             UseDuelMenuOption(TcgDuelMenu.Done);
-        } else if(GetBattleCards(true)[0].Substatus1 == 0x0d) {
+        } else if(MyDeck.Active.Substatus1 == 0x0d) {
             UseDuelMenuOption(TcgDuelMenu.Done);
         } else if(UseBestMove()) {
             ClearText();
@@ -362,13 +419,20 @@ public partial class Tcg {
             return true;
         }
 
-        active = GetBattleCards()[0];
+        active = MyDeck.Active;
 
         // todo prefer cards that are stronger to send in rather than always first
         if(active.CurHP == 0) {
-            // automatically selects next bench pokemon
-            MenuInput(Joypad.A);
-            ClearText();
+            if(CpuRead("wOpponentArenaCardHP") == 0) {
+                PickPrize();
+                ClearText();
+            }
+            if(CpuRead("wDuelFinished") == 0) {
+                // automatically selects next bench pokemon
+                MenuScroll(MyDeck.GetBestArena(oppActive).Key);
+                MenuInput(Joypad.A);
+                ClearText();
+            }
         }
 
         return CpuRead("wDuelFinished") != 0;
@@ -378,32 +442,40 @@ public partial class Tcg {
     // limit how many basics to place so i can have "junk" cards in hand?
     // if sending out initial active from duel start, predict opp active and send out best card?
     //    this idea also needs to take into account energies in hand
-    public void PlayBasics(bool inMenu) {
+    public void PlayBasics(bool inMenu, TcgPkmnCard oppActive) {
+        List<TcgPkmnCard> basics = MyDeck.SortBasics(oppActive);
         while(MyDeck.BasicsInHand.Count > 0 && CpuRead("wPlayerNumberOfPokemonInPlayArea") < 3) {
-            TcgCard basicCard = MyDeck.BasicsInHand[0];
+            TcgPkmnCard basicCard = basics[0];
             UseHandCard(MyDeck.Hand.IndexOf(basicCard), -1, inMenu);
             ClearText();
+            basics.Remove(basicCard);
         }
     }
 
-    public void EvolveCards() {
-        List<TcgBattleCard> cards = GetBattleCards();
+    public bool EvolveCards() {
+        bool evolved = false;
+        List<TcgBattleCard> cards = MyDeck.ArenaCards;
         foreach(TcgCard handCard in MyDeck.Hand) {
             if(handCard is TcgPkmnCard) {
                 TcgPkmnCard evoCard = (TcgPkmnCard) handCard;
                 TcgBattleCard candidate = cards.Find(item => item.Card.Name == evoCard.PreEvoName);
                 if(candidate != null && candidate.CanEvolve) {
                     UseHandCard(MyDeck.Hand.IndexOf(evoCard), cards.IndexOf(candidate));
+                    evolved = true;
                 }
             }
         }
+        return evolved;
     }
 
     // bench pokemon (normally indexed from 1) are indexed from 0 in this menu
     public void Retreat(byte slot) {
         UseDuelMenuOption(TcgDuelMenu.Retreat);
-        RunUntil("HandleMenuInput");
-        for(int i = 0; i < GetBattleCards()[0].Card.RetreatCost; i++) {
+
+        byte retreatCost = MyDeck.Active.Card.RetreatCost;
+        if(retreatCost > 0)
+            RunUntil("HandleMenuInput");
+        for(int i = 0; i < retreatCost; i++) {
             MenuInput(Joypad.A);
         }
         ClearText();
@@ -411,5 +483,6 @@ public partial class Tcg {
         MenuScroll(slot - 1);
         Press(Joypad.A);
         ClearText();
+
     }
 }
