@@ -3,7 +3,6 @@ public class Yellow : Rby {
     public Yellow(bool speedup = false, string saveName = "roms/pokeyellow.sav") : base("roms/pokeyellow.gbc", saveName, speedup ? SpeedupFlags.NoVideo | SpeedupFlags.NoSound : SpeedupFlags.None) {
         SYM["igtInject"] = 0x1C79D6;
     }
-
     public bool Yoloball() {
         Hold(Joypad.B, SYM["ManualTextScroll"]);
         // for(int i = 0; i < waitFrames; i++) {
