@@ -252,27 +252,10 @@ public class RedBlue : Rby {
     };
 
     public RedBlue(string rom, string saveName, bool speedup = false) : base(rom, saveName, speedup ? SpeedupFlags.All : SpeedupFlags.None) {
-        InitIntroStrats();
         SYM["biosReadKeypad"] = 0x21d;
     }
 
-    private void InitIntroStrats() {
-        IntroStrats["gfSkip"] = new RbyIntroStrat("_gfSkip", 0, new int[] {SYM["Joypad"]}, new Joypad[] {Joypad.Up | Joypad.B | Joypad.Select}, new int[] {1});
-        // IntroStrats["gfWait"] = new RbyIntroStrat("_gfWait", ??, new int[] {SYM["PlayShootingStar"] + 0x41}, new Joypad[] {Joypad.None}, new int[] {1});
-        IntroStrats["title0"] = new RbyIntroStrat("_title0", 0, new int[] {SYM["Joypad"]}, new Joypad[] {Joypad.Start}, new int[] {1});
-        IntroStrats["hop0"] = new RbyIntroStrat("_hop0", 0, new int[] {SYM["Joypad"]}, new Joypad[] {Joypad.Up | Joypad.B | Joypad.Select}, new int[] {1});
-        IntroStrats["hop1"] = new RbyIntroStrat("_hop1", 131, new int[] {SYM["AnimateIntroNidorino"], SYM["CheckForUserInterruption"], SYM["Joypad"]}, new Joypad[] {Joypad.None, Joypad.None, Joypad.A}, new int[] {1, 1, 1});
-        IntroStrats["cont"] = new RbyIntroStrat("_cont", 0, new int[] {SYM["Joypad"]}, new Joypad[] {Joypad.A}, new int[] {1});
-
-        IntroStrats["nopal"] = new RbyPalStrat("_nopal", 0, new int[] {SYM["Start"]}, new Joypad[] {Joypad.None}, new int[] {1});
-        IntroStrats["pal"] = new RbyPalStrat("_pal", 0, new int[] {SYM["biosReadKeypad"], SYM["biosReadKeypad"], SYM["Start"]}, new Joypad[] {Joypad.None, Joypad.Left, Joypad.None}, new int[] {1, 1, 1});
-        IntroStrats["nopalAB"] = new RbyPalStrat("_nopalAB", 0, new int[] {SYM["biosReadKeypad"], SYM["biosReadKeypad"], SYM["Start"]}, new Joypad[] {Joypad.None, Joypad.A, Joypad.None}, new int[] {1, 1, 1});
-        IntroStrats["palAB"] = new RbyPalStrat("_palAB", 0, new int[] {SYM["biosReadKeypad"], SYM["biosReadKeypad"], SYM["Start"]}, new Joypad[] {Joypad.None, Joypad.Left, Joypad.Left | Joypad.A}, new int[] {1, 70, 1});
-        IntroStrats["palHold"] = new RbyPalStrat("_palHold", 0, new int[] {SYM["biosReadKeypad"], SYM["Start"]}, new Joypad[] {Joypad.None, Joypad.Left | Joypad.A}, new int[] {1, 1});
-        IntroStrats["palABRel"] = new RbyPalStrat("_palABRel", 0, new int[] {SYM["biosReadKeypad"], SYM["biosReadKeypad"], SYM["biosReadKeypad"], SYM["Start"]}, new Joypad[] {Joypad.None, Joypad.Left, Joypad.Left | Joypad.A, Joypad.None}, new int[] {1, 70, 1, 1});
-    }
-
-    public bool Yoloball() {
+    public override bool Yoloball() {
         Hold(Joypad.B, SYM["ManualTextScroll"]);
         Press(Joypad.A);
         Hold(Joypad.B, SYM["PlayCry"]);

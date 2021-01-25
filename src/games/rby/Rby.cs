@@ -52,8 +52,6 @@ public partial class Rby : GameBoy {
 
     // Maps ROM checksums to their parsed data.
     private static Dictionary<int, RbyData> ParsedROMs = new Dictionary<int, RbyData>();
-    public Dictionary<string, RbyIntroStrat> IntroStrats = new Dictionary<string, RbyIntroStrat>();
-
     public RbyData Data;
 
     public Charmap Charmap {
@@ -280,6 +278,10 @@ public partial class Rby : GameBoy {
             Charmap = Data.Charmap,
             CharmapOffset = 0x80,
         };
+    }
+
+    public virtual bool Yoloball() {
+        throw new NotImplementedException();
     }
 
     public virtual byte[][] BGPalette() {

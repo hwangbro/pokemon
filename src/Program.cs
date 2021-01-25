@@ -1,10 +1,26 @@
 ﻿using System;
+using System.Collections.Generic;
 
 
 class Program {
     static void Main(string[] args) {
-        // CrystalTest();
-        RedTest();
+        Red gb = new Red(true);
+        // gb.Record("test");
+        gb.LoadState("basesaves/red/char/CharMoonip.gqs");
+        RbyIntroSequence intro = new RbyIntroSequence(RbyStrat.NoPal, RbyStrat.GfSkip, RbyStrat.Hop0, RbyStrat.TitleSkip, RbyStrat.Continue, RbyStrat.Continue);
+        List<RbyTile> itemTiles = new List<RbyTile> {
+            gb.Maps["MtMoon1F"][34, 31],
+            gb.Maps["MtMoon1F"][35, 23],
+            gb.Maps["MtMoonB2F"][28, 5],
+        };
+        string path1 = "UUUUUUUUUUUUURRRRRRUUUUUUURRRRDRDDDDDDDDDDDDDDDDRRRRRRURRR";
+        string path2 = "UUUUUUUUR";
+        string path3 = "UUUUUUUUUUULUUUUUUUUULLLLLLLLLLDDDDLLLLLLLDDDD";
+        string path4 = "DDLLLLLLLLRRRUUULUR";
+        string path5 = "DDDDLLLRARRARRARRRUUDDDDDDLLLLLLULLLLUUUUUUUUUUUALL";
+
+        RbyIGTChecker.CheckIGT(gb, intro, "", itemTiles, path1, path2, path3, path4, path5);
+        gb.Dispose();
     }
 
     public static void CrystalTest() {
@@ -55,44 +71,6 @@ class Program {
             };
 
         a.Simulate("simulation/red/silphbar/nosilphbar", 16, 25000, initialStates, actions2);
-    }
-
-    public static void RedTest() {
-        Red gb = new Red();
-        gb.Record("test");
-
-        RbyIntroSequence sequence = new RbyIntroSequence();
-        sequence.Add(gb.IntroStrats["nopal"]);
-        sequence.Add(gb.IntroStrats["gfSkip"]);
-        sequence.Add(gb.IntroStrats["hop0"]);
-        sequence.Add(gb.IntroStrats["title0"]);
-        sequence.Add(gb.IntroStrats["cont"]);
-        sequence.Add(gb.IntroStrats["cont"]);
-
-        gb.ExecuteIntroSequence(sequence);
-        gb.Execute("L L L U L L U A U L A L D L D L L D A D D A D D D L A L L A L U U A U"); // regular nido
-        gb.Yoloball();
-        // gb.Execute("L D U A L L U L L L L A U L L L L L A D D A D D L A D D D L A U U A U"); // pal nido
-        Console.WriteLine(sequence);
-        gb.AdvanceFrames(1000);
-        gb.Dispose();
-    }
-
-    public static void YellowTest() {
-        Yellow gb = new Yellow(false, "basesaves/yellow/nido.sav");
-        gb.Record("test");
-        RbyIntroSequence sequence = new RbyIntroSequence();
-        sequence.Add(gb.IntroStrats["gfSkip"]);
-        sequence.Add(gb.IntroStrats["intro1"]);
-        sequence.Add(gb.IntroStrats["title0"]);
-        sequence.Add(gb.IntroStrats["cont"]);
-        sequence.Add(gb.IntroStrats["cont"]);
-
-        gb.ExecuteIntroSequence(sequence);
-        gb.Execute("U R A R U");
-        gb.Yoloball();
-        gb.AdvanceFrames(1000);
-        gb.Dispose();
     }
 
     public static void runSimulation() {
