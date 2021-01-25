@@ -5,6 +5,7 @@ using System.Collections.Generic;
 class Program {
     static void Main(string[] args) {
         Jennifer.Test();
+        // Jennifer.Test2();
     }
 
     public static void SilphSimulation() {

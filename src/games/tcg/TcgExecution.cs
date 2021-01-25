@@ -87,7 +87,7 @@ public partial class Tcg {
         }
     }
 
-    public void ClearText() {
+    public int ClearText() {
         // CardListFunction wGameEvent
         // return the exit address?
         // need to exit on duel end screen
@@ -112,14 +112,22 @@ public partial class Tcg {
                 InjectKeysHeld(Joypad.B);
                 AdvanceFrame();
             } else {
-                break;
+                return ret;
             }
         }
     }
 
     // run if opp arena card hp is 0?
-    public void PickPrize() {
+    public void PickPrize(int slot = 0) {
         RunUntil(SYM["Func_8aaa"] + 0x4f);
+        byte curSlot = CpuRead("wPrizeCardCursorPosition");
+        if(curSlot % 2 != slot % 2) {
+            ScrollYesNoMenu(Joypad.Right);
+        }
+        if(curSlot / 2 != slot / 2) {
+            ScrollYesNoMenu(Joypad.Down);
+        }
+
         Press(Joypad.A);
         RunUntil(SYM["OpenCardPage"] + 0x36);
         Press(Joypad.B);
@@ -266,7 +274,22 @@ public partial class Tcg {
         TcgBattleCard oppActive = OppDeck.ArenaCards[0];
         int moveSlot = -1;
         bool discard = false;
+        if(oppActive.Substatus1 == 0x0d) {
+            // fly
+            return false;
+        }
+        if(active.Confused && !PredictCoinFlip()) {
+            return false;
+        }
+        if((active.Substatus2 & 0x05) > 0) {
+            // tail whip
+            return false;
+        }
+        if(active.Asleep) {
+            return false;
+        }
         for(byte i = 0; i < 2; i++) {
+            if(String.IsNullOrEmpty(active.Card.Moves[i].Name)) continue;
             List<TcgType> moveCost = active.CanUseMove(i);
             if(moveCost.Count == 0) {
                 byte curDamage = active.CalculateDamage(oppActive, i);
@@ -288,11 +311,21 @@ public partial class Tcg {
     }
 
     // main "AI" routine
-    // move to execution
     // returns false if duel is finished
     public bool DoTurn() {
         TcgBattleCard active = MyDeck.Active;
         TcgBattleCard oppActive = OppDeck.Active;
+        int ret = 0;
+
+        if(active.CurHP == 0) {
+            if(CpuRead("wDuelFinished") == 0) {
+                // automatically selects next bench pokemon
+                MenuScroll(MyDeck.GetBestArena(oppActive).Key);
+                MenuInput(Joypad.A);
+                ClearText();
+                return DoTurn();
+            }
+        }
 
         if(MyDeck.Hand.Contains(TrainerCards["Bill"])) {
             UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Bill"]));
@@ -311,6 +344,14 @@ public partial class Tcg {
         //     }
         // }
         if(MyDeck.Hand.Contains(TrainerCards["Computer Search"])) {
+            if(MyDeck.ArenaCards.Any(item => item.Card.Name == "Diglett")) {
+                if(!MyDeck.Hand.Any(item => item.Name == "Dugtrio")) {
+                    // use cs to look for dugtrio
+                }
+
+            } else if(MyDeck.Hand.Any(item => item.Name == "Dugtrio")) {
+
+            }
             // computer search scenarios
             // 1: look for dugtrio if i have diglett
             // 2: look for pluspower if you can finish active pokemon
@@ -368,7 +409,7 @@ public partial class Tcg {
             active = MyDeck.Active;
         }
 
-        // consider swapping
+        // retreat to better card
         byte bestIdx = MyDeck.GetBestArena(oppActive).Key;
         if(active.CanRetreat && bestIdx != 0 && MyDeck.ArenaCards[bestIdx].CanAttack) {
             Retreat(bestIdx);
@@ -401,32 +442,38 @@ public partial class Tcg {
         // make attack more intelligent by using weakest attack that can kill
         //    to avoid unnecessary discards?
         // if confused, don't attack if next coin flip is tails
-        if(active.Status == TcgDuelStatus.Paralyzed) {
+        if(active.Paralyzed) {
             UseDuelMenuOption(TcgDuelMenu.Done);
         } else if(MyDeck.Active.Substatus1 == 0x0d) {
             UseDuelMenuOption(TcgDuelMenu.Done);
         } else if(UseBestMove()) {
-            ClearText();
-            if(CpuRead("wOpponentArenaCardHP") == 0) {
-                PickPrize();
+            ret = ClearText();
+            if(ret == SYM["Func_8aaa"] + 0x4f) {
+                for(int i = 0; i < CpuRead("wNumberPrizeCardsToTake"); i++) {
+                    PickPrize(MyDeck.PrizesLeft().IndexOf(MyDeck.SortCards(MyDeck.PrizesLeft())[0]));
+                    ClearText();
+                }
             }
         } else {
             UseDuelMenuOption(TcgDuelMenu.Done);
         }
-        ClearText();
+        ret = ClearText();
 
-        if(CpuRead("wPlayerNumberOfPokemonInPlayArea") == 0) {
+        if(CpuRead("wPlayerNumberOfPokemonInPlayArea") == 0 || CpuRead("wOpponentNumberOfPokemonInPlayArea") == 0) {
             return true;
         }
 
         active = MyDeck.Active;
 
-        // todo prefer cards that are stronger to send in rather than always first
-        if(active.CurHP == 0) {
-            if(CpuRead("wOpponentArenaCardHP") == 0) {
-                PickPrize();
+        if(ret == SYM["Func_8aaa"] + 0x4f) {
+            for(int i = 0; i < CpuRead("wNumberPrizeCardsToTake"); i++) {
+                PickPrize(MyDeck.PrizesLeft().IndexOf(MyDeck.SortCards(MyDeck.PrizesLeft())[0]));
                 ClearText();
             }
+        }
+
+        // todo prefer cards that are stronger to send in rather than always first
+        if(active.CurHP == 0) {
             if(CpuRead("wDuelFinished") == 0) {
                 // automatically selects next bench pokemon
                 MenuScroll(MyDeck.GetBestArena(oppActive).Key);

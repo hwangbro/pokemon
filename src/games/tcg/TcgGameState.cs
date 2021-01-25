@@ -29,22 +29,30 @@ public partial class Tcg {
 
         // card locations
         for(int i = 0; i < 60; i++) {
+            // byte a = data.u8();
             locations.Add(data.u8());
         }
 
         // prizes
+        byte prizeCount = CpuRead("wDuelInitialPrizes");
         for(int i = 0; i < 6; i++) {
-            if(i < CpuRead("wDuelInitialPrizes")) {
+            if(i < prizeCount) {
+                // byte a = data.u8();
                 deck.Prizes.Add(deck.Cards[data.u8()]);
             } else {
                 data.Seek(1);
             }
         }
+        deck.PrizesDrawn = new bool[prizeCount];
 
         // hand
+        int counter = 0;
         for(int i = 0; i < 60; i++) {
-            if(i < numCardsInHand) {
-                deck.Hand.Add(deck.Cards[data.u8()]);
+            if(counter < numCardsInHand) {
+                byte a = data.u8();
+                if(a == 0xff) continue;
+                counter++;
+                deck.Hand.Add(deck.Cards[a]);
             } else {
                 data.Seek(1);
             }
@@ -83,6 +91,11 @@ public partial class Tcg {
         for(int i = 0; i < numArenaCards; i++) {
             arenaCards.Add(new TcgBattleCard());
             arenaCards[i].Energies = new List<TcgType>();
+            if(i == 0) {
+                arenaCards[0].IsActive = true;
+            } else {
+                arenaCards[i].IsActive = false;
+            }
         }
 
         for(int i = 0; i < 6; i++) {
@@ -119,15 +132,25 @@ public partial class Tcg {
             }
         }
         data.Seek(1);
+        byte prizeStatus = 0;
 
         if(arenaCards.Count > 0) {
             arenaCards[0].Substatus1 = data.u8();
             arenaCards[0].Substatus2 = data.u8();
             data.Seek(2); // changed weakness, changed resistance
             arenaCards[0].Substatus3 = data.u8();
-            data.Seek(4);
+            prizeStatus = data.u8();
+            data.Seek(3);
             arenaCards[0].Status = (TcgDuelStatus) data.u8();
         }
+
+        if(prizeStatus != 0) {
+            for(int i = 0; i < CpuRead("wDuelInitialPrizes"); i++) {
+                deck.PrizesDrawn[i] = (prizeStatus & (1 << i)) == 0;
+            }
+        }
+
+        // update prizes to properly show drawn or not drawn
 
         for(int i = 0; i < 60; i++) {
             TcgCard card = deck.Cards[i];

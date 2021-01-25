@@ -13,18 +13,23 @@ using System.Linq;
 public static class Jennifer {
 
     public static void Test() {
-        Tcg gb = new Tcg(false, "basesaves/tcg/jennifer.sav");
-        gb.Record("test");
+        // todo fix clef doll/fossil on bench. they are not tcgpkmncard, invalid cast
+        Tcg gb = new Tcg(true, "basesaves/tcg/jennifer.sav");
+        gb.LoadState("basesaves/tcg/amanda.gqs");
+        gb.HardReset();
+        // Console.WriteLine("{0:X2}", gb.CpuRead("wRNGCounter"));
+        // return;
+        // gb.Record("test");
 
         Dictionary<int, List<int>> streaks = new Dictionary<int, List<int>>();
         int wins = 0;
         int totalWinTurns = 0;
         bool prevResult = false;
         int index = 0;
-        int numDuels = 200;
+        int numDuels = 360;
 
         byte[] state = gb.SaveState();
-        for(int i = 0; i < numDuels; i++) {
+        for(int i = 3; i < numDuels; i++) {
             gb.LoadState(state);
             gb.ClearIntro();
 
@@ -40,12 +45,12 @@ public static class Jennifer {
             // clear text box
             gb.RunUntil("WaitForButtonAorB");
             // add delay frames here
-            gb.AdvanceFrames(72+3);
+            gb.AdvanceFrames(i);
             gb.Press(Joypad.A);
             gb.RunUntil("WaitForButtonAorB");
             // gb.SaveState("test3.gqs");
             byte rng = gb.CpuRead("wRNGCounter");
-            Console.WriteLine("{0:X2}{1:X2}, {2:X2}", gb.CpuRead("wRNG1"), gb.CpuRead("wRNG2"), gb.CpuRead("wRNGCounter"));
+            // Console.WriteLine("{0:X2}{1:X2}, {2:X2}", gb.CpuRead("wRNG1"), gb.CpuRead("wRNG2"), gb.CpuRead("wRNGCounter"));
 
             gb.ClearText();
             // gb.MyDeck.SortHand();
@@ -53,13 +58,18 @@ public static class Jennifer {
             gb.MenuInput(Joypad.B);
             gb.ClearText();
 
-            while(!gb.DoTurn()) {
+            bool finished = gb.CpuRead("wDuelFinished") != 0;
 
+            while(!finished) {
+                finished = gb.DoTurn();
             }
-            bool won = gb.CpuRead("wDuelFinished") == 1 && gb.CpuRead("wWhoseTurn") == 0xc2;
-            Console.WriteLine(i);
-            Console.WriteLine("Duel: {0} turns, {1}", gb.CpuRead("wDuelTurns") / 2, won ? "won" : "lost");
-            Console.WriteLine("Duel Result: {0}", won);
+            bool won = (gb.CpuRead("wDuelFinished") == 1 && gb.CpuRead("wWhoseTurn") == 0xc2) || (gb.CpuRead("wDuelFinished") == 2 && gb.CpuRead("wWhoseTurn") != 0xc2);
+            // Console.WriteLine(i);
+            Console.WriteLine("Duel #{2}: {0} turns, {1}, RNG: {3:X2}", gb.CpuRead("wDuelTurns") / 2, won ? "won" : "lost", i, rng);
+            if(!won) {
+                Console.WriteLine("\n\n");
+            }
+            // Console.WriteLine("Duel Result: {0}", won);
 
             int turns = gb.CpuRead("wDuelTurns") / 2;
             if(won) {
@@ -93,19 +103,19 @@ public static class Jennifer {
 
             gb.AdvanceFrames(100);
         }
-        Console.WriteLine("Total wins: {0}/{1}, avg win turns: {2}", wins, numDuels, totalWinTurns/wins);
+        Console.WriteLine("Total wins: {0}/{1}, avg win turns: {2}", wins, numDuels, (float) ((float) totalWinTurns/ (float) wins));
         gb.Dispose();
     }
 
-    public static double GetScore(Tcg gb) {
-        if(gb.OppDeck.BasicsInHand.Count() > 2) {
-            return -1;
-        // } else if(gb.OneTurnWin()) {
-        //     return 1;
-        } else if(gb.OppDeck.BasicsInHand.Count() == 1) {
-            return 0.5;
-        } else {
-            return 0;
+    public static void Test2() {
+        Tcg gb = new Tcg();
+        gb.LoadState("test.gqs");
+        RAMStream data = gb.From("wOpponentCardLocations");
+        data.Seek(60);
+        data.Seek(6);
+        for(int i = 0; i < gb.CpuRead("wOpponentNumberOfCardsInHand"); i++) {
+            Console.WriteLine(data.u8());
         }
+        // TcgDuelDeck oppDeck = gb.OppDeck;
     }
 }

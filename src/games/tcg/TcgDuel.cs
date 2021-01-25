@@ -31,6 +31,19 @@ public class TcgDuelDeck {
     public List<TcgBattleCard> SortedArenaCards(TcgBattleCard opp) {
         return ArenaCards.OrderByDescending(item => item.Score(opp)).ToList();
     }
+    public bool[] PrizesDrawn;
+    public List<TcgCard> PrizesLeft() {
+        List<TcgCard> prizesLeft = new List<TcgCard>();
+        for(int i = 0; i < Prizes.Count; i++) {
+            if(!PrizesDrawn[i]) {
+                prizesLeft.Add(Prizes[i]);
+            } else {
+                prizesLeft.Add(null);
+            }
+        }
+
+        return prizesLeft;
+    }
 
     // public List<TcgPkmnCard> GetActives() {
     //     List<TcgPkmnCard> actives = new List<TcgPkmnCard>();
@@ -68,13 +81,12 @@ public class TcgDuelDeck {
         return actives;
     }
 
-    public List<TcgCard> SortHand() {
+    public List<TcgCard> SortCards(List<TcgCard> unsorted) {
         // generic priority of cards, mainly for comp search
         // total "junk": lightning energies, basics/evolves that aren't dugtrio/machop
         // potions, switch, full heal, fire/fighting energies
         // dugtrio/oak/bill/pluspower/machop??
         List<TcgCard> cards = new List<TcgCard>();
-        List<TcgCard> unsorted = Hand;
         Dictionary<int, int> score = new Dictionary<int, int>();
 
         List<string> trainers = new List<string> {
@@ -85,7 +97,9 @@ public class TcgDuelDeck {
 
         for(int i = 0; i < unsorted.Count; i++) {
             TcgCard card = unsorted[i];
-            if(card.Type == TcgType.Lightning_E) {
+            if(card == null) {
+                score[i] = -1;
+            } else if(card.Type == TcgType.Lightning_E) {
                 score[i] = 0;
             } else if(card is TcgPkmnCard && card.Name != "Dugtrio" && card.Name != "Machop") {
                 score[i] = 1;
@@ -98,7 +112,7 @@ public class TcgDuelDeck {
             }
         }
 
-        foreach(var pair in score.OrderBy(key => key.Value)) {
+        foreach(var pair in score.OrderByDescending(key => key.Value)) {
             cards.Add(unsorted[pair.Key]);
         }
 
@@ -159,7 +173,19 @@ public class TcgBattleCard {
     public byte Substatus2;
     public byte Substatus3;
     public bool CanRetreat {
-        get { return Energies.Count >= Card.RetreatCost && Status != TcgDuelStatus.Paralyzed; }
+        get { return Energies.Count >= Card.RetreatCost && !Paralyzed && !Asleep; }
+    }
+    public bool Paralyzed {
+        get { return (Status & TcgDuelStatus.Paralyzed) > 0; }
+    }
+    public bool Poisoned {
+        get { return (Status & TcgDuelStatus.Poisoned) > 0; }
+    }
+    public bool Asleep {
+        get { return (Status & TcgDuelStatus.Asleep) > 0; }
+    }
+    public bool Confused {
+        get { return (Status & TcgDuelStatus.Confused) > 0; }
     }
 
     public bool CanAttack {
@@ -185,6 +211,8 @@ public class TcgBattleCard {
     public bool UsedPkmnPower {
         get { return (Flags & 0x20) > 0; }
     }
+
+    public bool IsActive;
 
     // returns missing energies
     public List<TcgType> CanUseMove(int moveIndex) {
@@ -242,6 +270,9 @@ public class TcgBattleCard {
             if(curDamage > score) {
                 score = curDamage;
             }
+        }
+        if(IsActive && score == 0 && opp.Card.Resistance != Card.Type) {
+            score += 50;
         }
         if(opp.Card.Weakness == Card.Type) {
             score += 30;
