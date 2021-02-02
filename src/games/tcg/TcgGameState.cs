@@ -72,12 +72,22 @@ public partial class Tcg {
 
         // arenacard + bench
         if(numArenaCards != 0) {
-            deck.ActiveCard = (TcgPkmnCard) deck.Cards[data.u8()];
+            var tempCard = deck.Cards[data.u8()];
+            if(tempCard.Id == 203 || tempCard.Id == 204) {
+                deck.ActiveCard = Doll(tempCard);
+            } else {
+                deck.ActiveCard = (TcgPkmnCard) tempCard;
+            }
 
             int benchCount = Math.Max(0, numArenaCards - 1);
             for(int i = 0; i < 5; i++) {
                 if(i < benchCount) {
-                    deck.Bench.Add((TcgPkmnCard) deck.Cards[data.u8()]);
+                    tempCard = deck.Cards[data.u8()];
+                    if(tempCard.Id == 203 || tempCard.Id == 204) {
+                        deck.Bench.Add(Doll(tempCard));
+                    } else {
+                        deck.Bench.Add((TcgPkmnCard) tempCard);
+                    }
                 } else {
                     data.Seek(1);
                 }
@@ -150,8 +160,6 @@ public partial class Tcg {
             }
         }
 
-        // update prizes to properly show drawn or not drawn
-
         for(int i = 0; i < 60; i++) {
             TcgCard card = deck.Cards[i];
             byte location = locations[i];
@@ -160,6 +168,8 @@ public partial class Tcg {
                     arenaCards[location - 0x10].Energies.Add(card.Type);
                 } else if(card is TcgPkmnCard) {
                     arenaCards[location - 0x10].Card = (TcgPkmnCard) card;
+                } else if((card.Id == 203 || card.Id == 204) && !(arenaCards[location - 0x10].Card is TcgPkmnCard)) {
+                    arenaCards[location - 0x10].Card = Doll(card);
                 }
             }
         }
@@ -195,5 +205,21 @@ public partial class Tcg {
         // Console.WriteLine("{0:X2}, {1:X2}, {2:X2}", e, d, wRNGCounter+1);
 
         return a % 2 == 0;
+    }
+
+    public TcgPkmnCard Doll(TcgCard baseCard) {
+        TcgPkmnCard card = new TcgPkmnCard();
+        card.Type = baseCard.Type;
+        card.Rarity = baseCard.Rarity;
+        card.Set1 = baseCard.Set1;
+        card.Set2 = baseCard.Set2;
+        card.Description = baseCard.Description;
+        card.HP = 10;
+        card.Stage = TcgStage.Basic;
+        card.RetreatCost = 0;
+        card.Weakness = TcgType.UNUSED_TYPE;
+        card.Resistance = TcgType.UNUSED_TYPE;
+
+        return card;
     }
 }

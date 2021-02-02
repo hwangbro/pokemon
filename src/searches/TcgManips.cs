@@ -10,16 +10,21 @@ using System.Linq;
     //   based on basics in hand, some trainer cards, enemy basics in hand, etc
     // look for clusters of good fights
 
-public static class Jennifer {
+public static class TcgManips {
 
-    public static void Test() {
-        // todo fix clef doll/fossil on bench. they are not tcgpkmncard, invalid cast
-        Tcg gb = new Tcg(true, "basesaves/tcg/jennifer.sav");
-        gb.LoadState("basesaves/tcg/amanda.gqs");
-        gb.HardReset();
-        // Console.WriteLine("{0:X2}", gb.CpuRead("wRNGCounter"));
-        // return;
-        // gb.Record("test");
+    public static void SearchDuels() {
+        // start flowtimer manip from ow or inside hand, not on new deck
+        // reset timers
+        Tcg gb = new Tcg(true);
+
+        CheckRNG();
+        return;
+
+        // gb.LoadState("basesaves/tcg/jennifer.gqs");
+        gb.LoadState("bulb_amanda.gqs");
+        gb.SoftReset();
+
+        gb.Record("test");
 
         Dictionary<int, List<int>> streaks = new Dictionary<int, List<int>>();
         int wins = 0;
@@ -29,7 +34,7 @@ public static class Jennifer {
         int numDuels = 360;
 
         byte[] state = gb.SaveState();
-        for(int i = 3; i < numDuels; i++) {
+        for(int i = 264; i < 274; i++) {
             gb.LoadState(state);
             gb.ClearIntro();
 
@@ -44,16 +49,21 @@ public static class Jennifer {
 
             // clear text box
             gb.RunUntil("WaitForButtonAorB");
+
+            // kristin/isaac have an extra textbox
+            // gb.Press(Joypad.A);
+            // gb.RunUntil("WaitForButtonAorB");
+
             // add delay frames here
             gb.AdvanceFrames(i);
+            // return;
+
             gb.Press(Joypad.A);
             gb.RunUntil("WaitForButtonAorB");
-            // gb.SaveState("test3.gqs");
+
             byte rng = gb.CpuRead("wRNGCounter");
-            // Console.WriteLine("{0:X2}{1:X2}, {2:X2}", gb.CpuRead("wRNG1"), gb.CpuRead("wRNG2"), gb.CpuRead("wRNGCounter"));
 
             gb.ClearText();
-            // gb.MyDeck.SortHand();
             gb.PlayBasics(true, gb.PredictOppActive());
             gb.MenuInput(Joypad.B);
             gb.ClearText();
@@ -64,12 +74,10 @@ public static class Jennifer {
                 finished = gb.DoTurn();
             }
             bool won = (gb.CpuRead("wDuelFinished") == 1 && gb.CpuRead("wWhoseTurn") == 0xc2) || (gb.CpuRead("wDuelFinished") == 2 && gb.CpuRead("wWhoseTurn") != 0xc2);
-            // Console.WriteLine(i);
             Console.WriteLine("Duel #{2}: {0} turns, {1}, RNG: {3:X2}", gb.CpuRead("wDuelTurns") / 2, won ? "won" : "lost", i, rng);
             if(!won) {
                 Console.WriteLine("\n\n");
             }
-            // Console.WriteLine("Duel Result: {0}", won);
 
             int turns = gb.CpuRead("wDuelTurns") / 2;
             if(won) {
@@ -84,9 +92,6 @@ public static class Jennifer {
                 }
             }
             prevResult = won;
-
-            // TcgDuelDeck myDeck = gb.MyDeck;
-            // TcgDuelDeck oppDeck = gb.OppDeck;
 
             // need to predict more than one turn wins, or refine one turn wins
             // can start by looking at AI https://github.com/pret/poketcg/blob/master/src/engine/bank08.asm
@@ -107,15 +112,10 @@ public static class Jennifer {
         gb.Dispose();
     }
 
-    public static void Test2() {
-        Tcg gb = new Tcg();
+    public static void CheckRNG() {
+        Tcg gb = new Tcg(true);
         gb.LoadState("test.gqs");
-        RAMStream data = gb.From("wOpponentCardLocations");
-        data.Seek(60);
-        data.Seek(6);
-        for(int i = 0; i < gb.CpuRead("wOpponentNumberOfCardsInHand"); i++) {
-            Console.WriteLine(data.u8());
-        }
-        // TcgDuelDeck oppDeck = gb.OppDeck;
+        Console.WriteLine("{0:X2}", gb.CpuRead("wRNGCounter"));
+        return;
     }
 }

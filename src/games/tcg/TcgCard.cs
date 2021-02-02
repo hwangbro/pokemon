@@ -97,6 +97,8 @@ public class TcgCard : ROMObject {
             Description = d1 + d2;
         }
     }
+    public TcgCard() {
+    }
 
     public bool IsPkmn {
         get { return Type <= TcgType.Colorless; }
@@ -136,6 +138,9 @@ public class TcgPkmnCard : TcgCard {
         Length = data.u16be(); // byte x byte
         Weight = data.u16le();
         Description = game.GetTextFromId(data.u16le());
+    }
+
+    public TcgPkmnCard() {
     }
 
     public TcgType GetTypeFromWeaknessResist(byte data) {

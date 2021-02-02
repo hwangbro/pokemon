@@ -33,6 +33,10 @@ public partial class Tcg {
         CpuWrite("hDPadHeld", (byte) joypad);
     }
 
+    public void SoftReset() {
+        InjectKeysHeld(Joypad.A | Joypad.B | Joypad.Start | Joypad.Select);
+    }
+
     public override void Press(params Joypad[] joypads) {
         foreach(Joypad joypad in joypads) {
             // 07:536A = input check on intro screen 1 IntroCutsceneJoypad
@@ -119,13 +123,25 @@ public partial class Tcg {
 
     // run if opp arena card hp is 0?
     public void PickPrize(int slot = 0) {
+        byte numPrizes = CpuRead("wDuelInitialPrizes");
         RunUntil(SYM["Func_8aaa"] + 0x4f);
         byte curSlot = CpuRead("wPrizeCardCursorPosition");
         if(curSlot % 2 != slot % 2) {
             ScrollYesNoMenu(Joypad.Right);
         }
-        if(curSlot / 2 != slot / 2) {
-            ScrollYesNoMenu(Joypad.Down);
+
+        curSlot = CpuRead("wPrizeCardCursorPosition");
+
+        int numScrolls = Math.Abs((curSlot - slot)/2);
+        Joypad input = slot < curSlot ? Joypad.Up : Joypad.Down;
+
+        if(numScrolls > 1) {
+            numScrolls = 1;
+            input ^= (Joypad) 0xc0;
+        }
+
+        for(int i = 0; i < numScrolls; i++) {
+            ScrollYesNoMenu(input);
         }
 
         Press(Joypad.A);
@@ -432,7 +448,7 @@ public partial class Tcg {
                 ClearText();
             }
         }
-        if(CpuRead("wAlreadyPlayedEnergy") == 0 && MyDeck.Hand.Contains(TrainerCards["Professor Oak"])) {
+        if(MyDeck.Hand.Contains(TrainerCards["Professor Oak"])) {
             UseHandCard(MyDeck.Hand.IndexOf(TrainerCards["Professor Oak"]));
             ClearText();
             return DoTurn();
@@ -501,6 +517,9 @@ public partial class Tcg {
 
     public bool EvolveCards() {
         bool evolved = false;
+        if(OppDeck.ArenaCards.Any(item => item.Card.Name == "Aerodactyl")) {
+            return false;
+        }
         List<TcgBattleCard> cards = MyDeck.ArenaCards;
         foreach(TcgCard handCard in MyDeck.Hand) {
             if(handCard is TcgPkmnCard) {
