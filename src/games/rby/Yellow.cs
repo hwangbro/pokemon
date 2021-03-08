@@ -16,4 +16,15 @@ public class Yellow : Rby {
         Press(Joypad.Down, Joypad.A, Joypad.A | Joypad.Left);
         return Hold(Joypad.A, SYM["ItemUseBall.captured"], SYM["ItemUseBall.failedToCapture"]) == SYM["ItemUseBall.captured"];
     }
+        // for(int i = 0; i < waitFrames; i++) {
+        //     RunUntil(SYM["_Joypad"]);
+        //     AdvanceFrame();
+        // }
+        Inject(Joypad.A);
+        AdvanceFrame(Joypad.A);
+        RunUntil(SYM["PlayCry"], SYM["PlayPikachuSoundClip"]);
+        Press(Joypad.Down, Joypad.A, Joypad.A | Joypad.Left);
+        return Hold(Joypad.A, SYM["ItemUseBall.captured"], SYM["ItemUseBall.failedToCapture"]) == SYM["ItemUseBall.captured"];
+    }
 }
+

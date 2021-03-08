@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using System.Collections.Generic;
 using System.Linq;
+using System;
 
 public partial class Gsc {
 
@@ -125,6 +126,95 @@ public partial class Gsc {
                 }
             }
         }
+    }
+
+    public void Swap(int target) {
+        // If fainted, assume you are already in the Pkmn menu
+        if(CpuReadBE<ushort>("wBattleMonHP") != 0) {
+            if(CpuRead("wMenuCursorX") != 0x2) MenuPress(Joypad.Right);
+            SelectMenuItem(1);
+        }
+
+        SelectMenuItem(target);
+        MenuPress(Joypad.A);
+    }
+
+    // Move slots are 1-4
+    public void UseMove(int slot) {
+        if(CpuRead("wMenuCursorX") != 0x1) MenuPress(Joypad.Left);
+        SelectMenuItem(1);
+        SelectMenuItem(slot);
+    }
+
+    public void UseItem(string item, int target = -1) {
+        UseItem(Items[item], target);
+    }
+
+    private void UseItem(GscItem item, int target) {
+        GscBag bag = Bag;
+        if(CpuRead("wMenuCursorX") != 0x1) MenuPress(Joypad.Left);
+        SelectMenuItem(2);
+        SelectBagItem(bag.Items.IndexOf(item) + 1);
+
+        switch(item.ExecutionPointerLabel) {
+            case "StatusHealingEffect":
+            case "FullRestoreEffect":
+            case "RestoreHPEffect":
+                SelectMenuItem(target != -1 ? target : CpuRead("wMenuCursorY"));
+                MenuPress(Joypad.A, Joypad.B);
+                break;
+            case "XAccuracyEffect":
+            case "XItemEffect":
+                RunUntil(SYM["WaitPressAorB_BlinkCursor"]);
+                Inject(Joypad.B);
+                AdvanceFrame(Joypad.B);
+                break;
+        }
+    }
+
+    // Targets for Items are indexed starting at 1
+    public void SelectMenuItem(int target) {
+        RunUntil("GetMenuJoypad");
+        MenuScroll(target, CpuRead("wMenuCursorY"), CpuRead("w2DMenuNumRows"), (CpuRead("w2DMenuFlags1") & 0x20) > 0);
+    }
+
+    public void SelectBagItem(int target) {
+        RunUntil("GetMenuJoypad");
+        MenuScroll(target, CpuRead("wMenuCursorY") + CpuRead("wMenuScrollPosition"), CpuRead("wNumItems"), (CpuRead("w2DMenuFlags1") & 0x20) > 0);
+        MenuPress(Joypad.A);
+    }
+
+    public void SwitchPocket(int target) {
+        // 0-3 are Item/Balls/Key Items/Tms&Hms
+        RunUntil("GetMenuJoypad");
+        int current = CpuRead("wCurPocket");
+        Joypad input = target < current ? Joypad.Left : Joypad.Right;
+        int amount = Math.Abs(current - target);
+        if(amount > 2) {
+            amount = 1;
+            input ^= (Joypad) 0x30;
+        }
+
+        for(int i = 0; i < amount; i++) {
+            MenuPress(input);
+            RunUntil("GetMenuJoypad");
+        }
+    }
+
+    public void MenuScroll(int target, int current, int max, bool wrapping) {
+        Joypad input = target < current ? Joypad.Up : Joypad.Down;
+        int amount = Math.Abs(current - target);
+
+        if(wrapping && amount > max / 2) {
+            amount = max - amount;
+            input ^= (Joypad) 0xc0;
+        }
+
+        for(int i = 0; i < amount; i++) {
+            MenuPress(input);
+        }
+
+        MenuPress(Joypad.A);
     }
 
     public void Swap(int target) {

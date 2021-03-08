@@ -44,7 +44,7 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
             gb.UseMove(1);
         }
 
-        gb.ClearText(false);
+        gb.ClearText();
 
         return true;
     }
@@ -90,7 +90,7 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
             }
         }
 
-        gb.ClearText(false);
+        gb.ClearText();
 
         return true;
     }
@@ -114,10 +114,10 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
         if(battleMon.Species.Name == "SPEAROW") {
             memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
             gb.UseMove(2);
-            gb.ClearText(false);
+            gb.ClearText();
             if(gb.BattleMon.HP == 0) {
                 gb.Swap(1);
-                gb.ClearText(false);
+                gb.ClearText();
             }
         } else if(enemyMon.Name == "UMBREON") {
             memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
@@ -126,7 +126,7 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
             } else if(battleMon.SpecialAttackModifider == 7 && battleMon.AccuracyModifider != 7) {
                 memory["kenyaSwap"] = true;
                 gb.Swap(2);
-                gb.ClearText(false);
+                gb.ClearText();
                 if(gb.BattleMon.HP == 0) {
                     memory["umbreonTurns"] = (int) memory["umbreonTurns"] + 1;
                     gb.Swap(1);
@@ -198,7 +198,7 @@ public class GscSimulation : FightSimulation<Crystal, GscResult> {
             }
         }
 
-        gb.ClearText(false);
+        gb.ClearText();
 
         return true;
     }
