@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 public class RedBlue : Rby {
@@ -252,26 +253,26 @@ public class RedBlue : Rby {
     };
 
     public RedBlue(string rom, string saveName, bool speedup = false) : base(rom, saveName, speedup ? SpeedupFlags.All : SpeedupFlags.None) {
-        SYM["biosReadKeypad"] = 0x21d;
+
+    public override void ChooseMenuItem(int target) {
+        RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
+        MenuScroll(target, Joypad.A, CpuReadLE<ushort>(Registers.SP + 6) != SYM["RedisplayStartMenu.loop"] + 0x3);
     }
 
-    public override bool Yoloball() {
-        Hold(Joypad.B, SYM["ManualTextScroll"]);
-        Press(Joypad.A);
-        Hold(Joypad.B, SYM["PlayCry"]);
-        Press(Joypad.Down | Joypad.A, Joypad.A | Joypad.Left);
-        return Hold(Joypad.A, SYM["ItemUseBall.captured"], SYM["ItemUseBall.failedToCapture"]) == SYM["ItemUseBall.captured"];
-    }
-        IntroStrats["cont"] = new RbyIntroStrat("_cont", 0, new int[] {SYM["Joypad"]}, new Joypad[] {Joypad.A}, new int[] {1});
-
-        IntroStrats["nopal"] = new RbyPalStrat("_nopal", 0, new int[] {0x100}, new Joypad[] {Joypad.None}, new int[] {1});
-        IntroStrats["pal"] = new RbyPalStrat("_pal", 0, new int[] {0x21d, 0x21d, 0x100}, new Joypad[] {Joypad.None, Joypad.Left, Joypad.None}, new int[] {1, 1, 1});
-        IntroStrats["nopalAB"] = new RbyPalStrat("_nopalAB", 0, new int[] {0x21d, 0x21d, 0x100}, new Joypad[] {Joypad.None, Joypad.A, Joypad.None}, new int[] {1, 1, 1});
-        IntroStrats["palAB"] = new RbyPalStrat("_palAB", 0, new int[] {0x21d, 0x21d, 0x100}, new Joypad[] {Joypad.None, Joypad.Left, Joypad.Left | Joypad.A}, new int[] {1, 70, 1});
-        IntroStrats["palHold"] = new RbyPalStrat("_palHold", 0, new int[] {0x21d, 0x100}, new Joypad[] {Joypad.None, Joypad.Left | Joypad.A}, new int[] {1, 1});
-        IntroStrats["palABRel"] = new RbyPalStrat("_palABRel", 0, new int[] {0x21d, 0x21d, 0x21d, 0x100}, new Joypad[] {Joypad.None, Joypad.Left, Joypad.Left | Joypad.A, Joypad.None}, new int[] {1, 70, 1, 1});
+    public override void SelectMenuItem(int target) {
+        RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
+        MenuScroll(target, Joypad.Select, true);
     }
 
+    public override void ChooseListItem(int target) {
+        RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
+        ListScroll(target, Joypad.A, true);
+    }
+
+    public override void SelectListItem(int target) {
+        RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
+        ListScroll(target, Joypad.Select, true);
+    }
     public bool Yoloball() {
         Hold(Joypad.B, SYM["ManualTextScroll"]);
         Press(Joypad.A);

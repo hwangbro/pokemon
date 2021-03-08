@@ -1,26 +1,26 @@
 public class Yellow : Rby {
 
     public Yellow(bool speedup = false, string saveName = "roms/pokeyellow.sav") : base("roms/pokeyellow.gbc", saveName, speedup ? SpeedupFlags.NoVideo | SpeedupFlags.NoSound : SpeedupFlags.None) {
-        SYM["igtInject"] = 0x1C79D6;
+
+    public override void ChooseMenuItem(int target) {
+        RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
+        MenuScroll(target, Joypad.A, false);
     }
 
-    public bool Yoloball() {
-        Hold(Joypad.B, SYM["ManualTextScroll"]);
-        // for(int i = 0; i < waitFrames; i++) {
-        //     RunUntil(SYM["_Joypad"]);
-        //     AdvanceFrame();
-        // }
-        Inject(Joypad.A);
-        AdvanceFrame(Joypad.A);
-        RunUntil(SYM["PlayCry"], SYM["PlayPikachuSoundClip"]);
-        Press(Joypad.Down, Joypad.A, Joypad.A | Joypad.Left);
-        return Hold(Joypad.A, SYM["ItemUseBall.captured"], SYM["ItemUseBall.failedToCapture"]) == SYM["ItemUseBall.captured"];
+    public override void SelectMenuItem(int target) {
+        RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
+        MenuScroll(target, Joypad.Select, true);
     }
-        // for(int i = 0; i < waitFrames; i++) {
-        //     RunUntil(SYM["_Joypad"]);
-        //     AdvanceFrame();
-        // }
-        Inject(Joypad.A);
+
+    public override void ChooseListItem(int target) {
+        RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
+        ListScroll(target, Joypad.A, false);
+    }
+
+    public override void SelectListItem(int target) {
+        RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
+        ListScroll(target, Joypad.Select, true);
+    }
         AdvanceFrame(Joypad.A);
         RunUntil(SYM["PlayCry"], SYM["PlayPikachuSoundClip"]);
         Press(Joypad.Down, Joypad.A, Joypad.A | Joypad.Left);
