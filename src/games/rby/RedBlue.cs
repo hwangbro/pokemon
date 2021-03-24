@@ -252,7 +252,7 @@ public class RedBlue : Rby {
         { ("SaffronPokecenter", 0), 10 },
     };
 
-    public RedBlue(string rom, string saveName, bool speedup = false) : base(rom, saveName, speedup ? SpeedupFlags.All : SpeedupFlags.None) {
+    public RedBlue(string rom, string saveName, bool speedup = false) : base(rom, saveName, speedup ? SpeedupFlags.All : SpeedupFlags.None) { }
 
     public override void ChooseMenuItem(int target) {
         RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
@@ -273,13 +273,25 @@ public class RedBlue : Rby {
         RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
         ListScroll(target, Joypad.Select, true);
     }
-    public bool Yoloball() {
+    public override bool Yoloball() {
         Hold(Joypad.B, SYM["ManualTextScroll"]);
         Press(Joypad.A);
         Hold(Joypad.B, SYM["PlayCry"]);
         // AdvanceToAddress(Sym["PlayCry"]);
         Press(Joypad.Down | Joypad.A, Joypad.A | Joypad.Left);
         return Hold(Joypad.A, SYM["ItemUseBall.captured"], SYM["ItemUseBall.failedToCapture"]) == SYM["ItemUseBall.captured"];
+    }
+
+    public override bool SelectBall() {
+        Hold(Joypad.B, SYM["ManualTextScroll"]);
+        Press(Joypad.A);
+        Hold(Joypad.B, SYM["PlayCry"]);
+        Press(Joypad.Down | Joypad.A, Joypad.Select, Joypad.A);
+        return Hold(Joypad.A, SYM["ItemUseBall.captured"], SYM["ItemUseBall.failedToCapture"]) == SYM["ItemUseBall.captured"];
+    }
+
+    public override RbyMap GetMap() {
+        return this.Map;
     }
 }
 

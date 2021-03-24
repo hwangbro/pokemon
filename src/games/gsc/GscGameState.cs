@@ -58,55 +58,6 @@ public partial class Gsc {
         get { return CpuRead("wYCoord"); }
     }
 
-    public GscBag Bag {
-        get {
-            GscBag bag = new GscBag();
-            bag.Items = new GscPocket();
-            bag.Balls = new GscPocket();
-            bag.KeyItems = new GscPocket();
-            bag.TmsHms = new GscPocket();
-
-            bag.Items.Game = bag.Balls.Game = bag.KeyItems.Game = bag.TmsHms.Game = this;
-
-            RAMStream data = From("wTMsHMs");
-            int cursorIndex = 0;
-            bag.TmsHms.Items = new ItemStack[57];
-            for(byte i = 0; i < bag.TmsHms.Items.Length; i++) {
-                byte count = data.u8();
-                byte id = i;
-                if(id >= 4) id++;
-                if(id >= 29) id++;
-
-                if(count > 0) {
-                    bag.TmsHms.Items[cursorIndex++] = new ItemStack(Items[id + 190], count);
-                }
-            }
-            bag.TmsHms.NumItems = cursorIndex;
-
-            bag.Items.NumItems = data.u8();
-            bag.Items.Items = new ItemStack[bag.Items.NumItems];
-            for(byte i = 0; i < bag.Items.NumItems; i++) {
-                bag.Items.Items[i] = new ItemStack(Items[data.u8() - 1], data.u8());
-            }
-            data.Seek((20 - bag.Items.NumItems) * 2 + 1);
-
-            bag.KeyItems.NumItems = data.u8();
-            bag.KeyItems.Items = new ItemStack[bag.KeyItems.NumItems];
-            for(byte i = 0; i < bag.KeyItems.NumItems; i++) {
-                bag.KeyItems.Items[i] = new ItemStack(Items[data.u8() - 1], 1);
-            }
-            data.Seek((25 - bag.KeyItems.NumItems) + 1);
-
-            bag.Balls.NumItems = data.u8();
-            bag.Balls.Items = new ItemStack[bag.Balls.NumItems];
-            for(byte i = 0; i < bag.Balls.NumItems; i++) {
-                bag.Balls.Items[i] = new ItemStack(Items[data.u8() - 1], data.u8());
-            }
-
-            return bag;
-        }
-    }
-
     // TODO: Box structs, Party structs
 
     private GscPokemon ReadBattleStruct(RAMStream data, RAMStream modifiers, RAMStream battleStatus, int screensAddr) {

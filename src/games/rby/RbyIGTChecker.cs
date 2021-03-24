@@ -2,59 +2,117 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.IO;
 
-public static class RbyIGTChecker {
-    // todo figure out continuous paths with item pickups
-    // threaded
-    // design better params for string/item pickups
-    // flag for checking 60 vs 3600
-    // yoloball manips, dv checking
+public static class RbyIGTChecker<Gb> where Gb : Rby {
+    // todo fix edge case: yellow pidgey manip picks up item after yoloball on last tile
     // flag for verbosity
-    // store results intelligently in data structure to print out igt charts
-    public static void CheckIGT(Rby gb, RbyIntroSequence intro, string targetPoke, List<RbyTile> itemsPickups, params string[] paths) {
-        gb.HardReset();
-        intro.ExecuteUntilIGT(gb);
-        byte[] igtState = gb.SaveState();
-        int noEncounter = 0;
 
-        int numThreads = 0;
+    class IGTResult {
+        public RbyPokemon Mon;
+        public RbyMap Map;
+        public RbyTile Tile;
+        public bool Yoloball;
+
+        public override string ToString() {
+            return String.Format("[{0}] [{1}]: {2} on {3}, Yoloball: {4}", IGTSec, IGTFrame, Mon, Tile, Yoloball);
+        }
+        public byte IGTSec;
+        public byte IGTFrame;
+    }
+
+    public static List<(byte, byte, byte)> Empty = new List<(byte, byte, byte)>();
+
+    public static void CheckIGT(string statePath, RbyIntroSequence intro, string path, string targetPoke, List<(byte, byte, byte)> itemPickups, bool check3600, bool checkDV) {
+        byte[] state = File.ReadAllBytes(statePath);
+
+        int numThreads = 32;
+        bool verbose = false;
 
         bool[] threadsRunning = new bool[numThreads];
         Thread[] threads = new Thread[numThreads];
 
+        Gb[] gbs = MultiThread.MakeThreads<Gb>(numThreads);
 
-        for(byte i = 0; i < 60; i++) {
-            gb.LoadState(igtState);
-            gb.CpuWrite(gb.SYM["wPlayTimeSeconds"], 0);
-            gb.CpuWrite(gb.SYM["wPlayTimeFrames"], i);
+        gbs[0].LoadState(state);
+        gbs[0].HardReset();
+        // gbs[0].Record("test");
+        intro.ExecuteUntilIGT(gbs[0]);
+        byte[] igtState = gbs[0].SaveState();
+
+        List<IGTResult> manipResults = new List<IGTResult>();
+        Dictionary<string, int> manipSummary = new Dictionary<string, int>();
+        byte seconds = check3600 ? (byte) 60 : (byte) 1;
+
+        object frameLock = new object();
+        object writeLock = new object();
+        int igtCount = 0;
+
+        MultiThread.For(seconds*60, gbs, (gb, iterator) => {
+            IGTResult res = new IGTResult();
+            lock(frameLock) {
+                gb.LoadState(igtState);
+                res.IGTSec = (byte)(igtCount / 60);
+                res.IGTFrame = (byte)(igtCount % 60);
+                gb.CpuWrite("wPlayTimeSeconds", res.IGTSec);
+                gb.CpuWrite("wPlayTimeFrames", res.IGTFrame);
+                igtCount++;
+                if(verbose) Console.WriteLine(igtCount);
+            }
+
             intro.ExecuteAfterIGT(gb);
-
             int ret = 0;
-            foreach(string path in paths) {
-                ret = gb.Execute(spacePath(path));
-                if(itemsPickups.Contains(gb.Tile))
+            foreach(string step in spacePath(path).Split()) {
+                ret = gb.Execute(step);
+                if(itemPickups.Contains((gb.Tile.Map.Id, gb.Tile.X, gb.Tile.Y)))
                     gb.PickupItem();
-                if(ret != gb.SYM["JoypadOverworld"]) {
-                    break;
-                }
+                if(ret != gb.SYM["JoypadOverworld"]) break;
             }
 
             if(ret == gb.SYM["CalcStats"]) {
-                bool caught = gb.Yoloball();
-                RbyPokemon enemyMon = gb.EnemyMon;
-                RbyTile curTile = gb.Tile;
-                if(caught) {
-                    Console.WriteLine("Frame #{0}: encounter {1} on tile {2}, DVs: {3:X4} YOLOBALL SUCCESS", i, enemyMon.Species.Name, curTile, enemyMon.DVs);
-                } else {
-                    Console.WriteLine("Frame #{0}: encounter {1} on tile {3}, DVs: {3:X4} YOLOBALL FAILURE", i, enemyMon.Species.Name, curTile, enemyMon.DVs);
-                }
+                res.Yoloball = gb.Yoloball();
+                res.Mon = gb.EnemyMon;
+            }
+            res.Tile = gb.Tile;
+            res.Map = gb.Map;
+
+            lock(writeLock) {
+                manipResults.Add(res);
+            }
+        });
+
+        // print out manip success
+        int success = 0;
+        manipResults.Sort(delegate(IGTResult a, IGTResult b) {
+            return (a.IGTSec*60 + a.IGTFrame).CompareTo(b.IGTSec*60 + b.IGTFrame);
+        });
+
+        foreach(var item in manipResults) {
+            if(verbose) Console.WriteLine(item);
+            if((String.IsNullOrEmpty(targetPoke) && item.Mon == null) ||
+                (item.Mon != null && item.Mon.Species.Name.ToLower() == targetPoke.ToLower() && item.Yoloball)) {
+                success++;
+            }
+            string summary;
+            if(item.Mon != null) {
+                summary = $", Tile: {item.Map.Id}#{item.Tile.ToString()}, Yoloball: {item.Yoloball}";
+                summary = checkDV ? item.Mon + summary : "L" + item.Mon.Level + " " + item.Mon.Species.Name + summary;
+                // summary = checkDV ? item.Mon + ", Tile: " + item.Map.Id.ToString() + " " + item.Tile.ToString() + ", Yoloball: " + item.Yoloball.ToString() : item.Mon.Species.Name + ", Tile: " + item.Tile.ToString() + ", Yoloball: " + item.Yoloball.ToString();
             } else {
-                Console.WriteLine("Frame #{0}: no encounter", i);
-                noEncounter++;
+                summary = "No Encounter";
+            }
+            if(!manipSummary.ContainsKey(summary)) {
+                manipSummary.Add(summary, 1);
+            } else {
+                manipSummary[summary]++;
             }
         }
-        // print out manip success
-        Console.WriteLine("no encounter igt: {0}/60", noEncounter);
+
+        foreach(var item in manipSummary) {
+            Console.WriteLine("{0}, {1}/{2}", item.Key, item.Value, seconds * 60);
+        }
+
+        Console.WriteLine("Success: {0}/{1}", success, seconds * 60);
     }
 
     public static string spacePath(string path) {

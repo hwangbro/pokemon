@@ -52,7 +52,6 @@ public partial class Rby : GameBoy {
 
     // Maps ROM checksums to their parsed data.
     private static Dictionary<int, RbyData> ParsedROMs = new Dictionary<int, RbyData>();
-    public Dictionary<string, RbyIntroStrat> IntroStrats = new Dictionary<string, RbyIntroStrat>();
     public RbyData Data;
 
     public Charmap Charmap {
@@ -264,17 +263,6 @@ public partial class Rby : GameBoy {
         LoadState(savestate);
     }
 
-    public override void RandomizeRNG(Random random) {
-        byte[] randomValues = new byte[3];
-        random.NextBytes(randomValues);
-
-        byte[] savestate = SaveState();
-        savestate[SaveStateLabels["hram"] + 0x104] = randomValues[0]; // rdiv
-        savestate[SaveStateLabels["hram"] + 0x1D3] = randomValues[1]; // hra
-        savestate[SaveStateLabels["hram"] + 0x1D4] = randomValues[2]; // hrs
-        LoadState(savestate);
-    }
-
     public override Font ReadFont() {
         const int numCols = 16;
         byte[] gfx = ROM.Subarray("FontGraphics", SYM["FontGraphicsEnd"] - SYM["FontGraphics"]);
@@ -293,6 +281,10 @@ public partial class Rby : GameBoy {
     }
 
     public virtual bool Yoloball() {
+        throw new NotImplementedException();
+    }
+
+    public virtual bool SelectBall() {
         throw new NotImplementedException();
     }
 

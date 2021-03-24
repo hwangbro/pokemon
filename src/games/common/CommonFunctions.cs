@@ -23,6 +23,14 @@ public partial class GameBoy {
         throw new NotImplementedException();
     }
 
+    public virtual void PickupItem() {
+        throw new NotImplementedException();
+    }
+
+    public virtual RbyMap GetMap() {
+        throw new NotImplementedException();
+    }
+
     // Helper function that executes the specified string path.
     public int Execute(string path) {
         return Execute(Array.ConvertAll(path.Split(" "), e => e.ToAction()));

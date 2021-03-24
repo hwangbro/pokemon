@@ -1,6 +1,6 @@
 public class Yellow : Rby {
 
-    public Yellow(bool speedup = false, string saveName = "roms/pokeyellow.sav") : base("roms/pokeyellow.gbc", saveName, speedup ? SpeedupFlags.NoVideo | SpeedupFlags.NoSound : SpeedupFlags.None) {
+    public Yellow(bool speedup = false, string saveName = "roms/pokeyellow.sav") : base("roms/pokeyellow.gbc", saveName, speedup ? SpeedupFlags.NoVideo | SpeedupFlags.NoSound : SpeedupFlags.None) { }
 
     public override void ChooseMenuItem(int target) {
         RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
@@ -21,6 +21,10 @@ public class Yellow : Rby {
         RunUntil("_Joypad", "HandleMenuInput_.getJoypadState");
         ListScroll(target, Joypad.Select, true);
     }
+
+    public override bool Yoloball() {
+        Hold(Joypad.B, SYM["ManualTextScroll"]);
+        Inject(Joypad.A);
         AdvanceFrame(Joypad.A);
         RunUntil(SYM["PlayCry"], SYM["PlayPikachuSoundClip"]);
         Press(Joypad.Down, Joypad.A, Joypad.A | Joypad.Left);

@@ -24,7 +24,7 @@ public class RandomPathResult {
     public IGTResults[] Results;
 }
 
-// TODO: 
+// TODO:
 //   - Figure out how to implement >0 cost edges without them being stacked at the beginning
 //   - Implement an encounter search? currently it's no encounter only
 
@@ -96,6 +96,23 @@ public static class RandomPathSearch {
         T current = startTile;
         while(Array.IndexOf(endTiles, current) == -1) {
             Edge<T>[] edges = current.Edges[edgeSet].Where(e => e.Cost == 0 && (canA || (e.Action & Action.A) == 0)).ToArray();
+            Edge<T> edge = edges[random.Next(edges.Length)];
+            path.Add(edge.Action);
+            current = edge.NextTile;
+            edgeSet = edge.NextEdgeset;
+
+            canA = (edge.Action & Action.A) == 0;
+        }
+
+        return path;
+    }
+
+    public static List<Action> GenerateRandomPath2<T>(Random random, int edgeSet, T startTile, params T[] endTiles) where T : Tile<T> {
+        List<Action> path = new List<Action>();
+        bool canA = false;
+        T current = startTile;
+        while(Array.IndexOf(endTiles, current) == -1) {
+            Edge<T>[] edges = current.Edges[edgeSet].Where(e => e.Cost == 0 || (canA && (e.Action & Action.A) == 0)).ToArray();
             Edge<T> edge = edges[random.Next(edges.Length)];
             path.Add(edge.Action);
             current = edge.NextTile;
