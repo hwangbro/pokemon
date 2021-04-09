@@ -37,11 +37,8 @@ public abstract class FightSimulation<Gb, Result> where Gb : GameBoy
         object writeLock = new object();
         int numSims = 0;
 
-        bool[] threadsRunning = new bool[numThreads];
-        Thread[] threads = new Thread[numThreads];
-
         Gb[] gbs = MultiThread.MakeThreads<Gb>(numThreads);
-        gbs[0].Record("test");
+        // gbs[0].Record("test");
 
         // Load the starting save state and transform the initial state
         // This transformation is usually setting the starting HP and advancing to the battle menu

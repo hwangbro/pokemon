@@ -210,9 +210,7 @@ public partial class Rby {
 
     public void UseMove(int slot) {
         BattleMenu(0, 0);
-        ChooseMenuItem(0);
         ChooseMenuItem(slot);
-        ChooseMenuItem(0);
     }
 
     public virtual void ChooseMenuItem(int target) {

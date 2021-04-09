@@ -24,10 +24,15 @@ public class Yellow : Rby {
 
     public override bool Yoloball() {
         Hold(Joypad.B, SYM["ManualTextScroll"]);
+        // for(int i = 0; i < 3; i++) {
+        //     RunUntil("_Joypad");
+        //     AdvanceFrame();
+        // }
         Inject(Joypad.A);
         AdvanceFrame(Joypad.A);
         RunUntil(SYM["PlayCry"], SYM["PlayPikachuSoundClip"]);
         Press(Joypad.Down, Joypad.A, Joypad.A | Joypad.Left);
+        // Press(Joypad.Down, Joypad.A, Joypad.Select, Joypad.A); // select yoloball
         return Hold(Joypad.A, SYM["ItemUseBall.captured"], SYM["ItemUseBall.failedToCapture"]) == SYM["ItemUseBall.captured"];
     }
 }
