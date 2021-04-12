@@ -42,4 +42,25 @@ public static class Extensions {
             if(attr.Length == 0) Array.Reverse(data, offset, Marshal.SizeOf(fieldType));
         }
     }
+    public static ushort RotateLeft(this ushort value, ref byte carry) {
+        ushort res = (ushort) (((value << 1) & 0xFFFE) | carry);
+        carry = (byte) (value >> 15);
+        return res;
+    }
+
+    public static (ushort, byte) RotateRight(ref this ushort value, ref byte carry) {
+        byte carryO = (byte) (value << 15);
+        return ((ushort) (carry | ((value >> 1) & 0x7FFF)), carryO);
+    }
+
+    public static void RotateLeft(ref this byte value, ref byte carry) {
+        byte carryO = (byte) (value >> 7);
+        value = (byte) (((value << 1) & 0xFE) | carry);
+        carry = carryO;
+    }
+
+    public static (byte, byte) RotateRight(ref this byte value, ref byte carry) {
+        byte carryO = (byte) (value << 7);
+        return ((byte) (carry | ((value >> 1) & 0x7F)), carryO);
+    }
 }

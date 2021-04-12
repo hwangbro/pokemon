@@ -34,7 +34,7 @@ public static class MultiThread {
     public static Gb[] MakeThreads<Gb>(int numThreads) where Gb : GameBoy {
         Gb[] gbs = new Gb[numThreads];
         for(int i = 0; i < numThreads; i++) {
-            gbs[i] = (Gb) Activator.CreateInstance(typeof(Gb), args: new object[] {true, "roms/pokered.sav"});
+            gbs[i] = (Gb) Activator.CreateInstance(typeof(Gb), args: new object[] {true});
         }
         return gbs;
     }

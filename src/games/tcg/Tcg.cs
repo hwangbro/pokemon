@@ -60,6 +60,7 @@ public partial class Tcg : GameBoy {
 
     public Tcg(bool speedup = false, string saveName = "roms/poketcg.sav", string rom = "roms/poketcg.gbc")
         : this(rom, saveName, speedup ? SpeedupFlags.NoSound | SpeedupFlags.NoVideo : SpeedupFlags.None) { }
+    public Tcg(bool speedup = false) : this("roms/poketcg.gbc", "roms/poketcg.sav", speedup ? SpeedupFlags.NoSound | SpeedupFlags.NoVideo : SpeedupFlags.None) { }
     public Tcg(string rom, string saveName, SpeedupFlags speedupFlags) : base("roms/gbc_bios.bin", rom, saveName, speedupFlags) {
         if(ParsedROMs.ContainsKey(ROM.GlobalChecksum)) {
             Data = ParsedROMs[ROM.GlobalChecksum];
